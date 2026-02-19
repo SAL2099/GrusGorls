@@ -8,9 +8,11 @@ import React from 'react';
 
 function App() {
   return (
-    <div>
-      <h1>Welcome to ThriftApp</h1>
-    </div>
+    <><div>
+      <head><title>ThriftApp</title></head>
+    </div><div>
+        <h1>Welcome to ThriftApp</h1>
+      </div></>
   );
 }
 
