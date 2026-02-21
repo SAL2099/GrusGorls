@@ -188,7 +188,7 @@ button.main-button {
   font-size: 14px;
   border-radius: 25px;
   padding: 15px 25px;
-  background-color: #f4813f;
+  background-color: #88E788;
   text-transform: uppercase;
   color: #fff;
   font-weight: 600;
@@ -680,7 +680,7 @@ welcome
 
 .welcome-area .header-text h1 em {
   font-style: normal;
-  color: #fba70b;
+  color: #88E788;
 }
 
 .welcome-area .header-text p {
