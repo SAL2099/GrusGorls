@@ -684,13 +684,18 @@ welcome
 }
 
 .welcome-area .header-text p {
-  font-weight: 300;
-  font-size: 17px;
-  color: #7a7a7a;
+  font-weight: 600;
+  font-size: 24px;
+  color: #FFC5D3;
   line-height: 30px;
   letter-spacing: 0.25px;
   margin-bottom: 40px;
   position: relative;
+}
+
+.welcome-area .header-text p em {
+  font-style: normal;
+  color: #88E788;
 }
 
 @media (max-width: 1420px) {
@@ -1158,7 +1163,7 @@ preloader
 */
 #preloader {
   overflow: hidden;
-  background-image: linear-gradient(145deg, #f4813f 0%, #f1556a 100%);
+  background-image: linear-gradient(145deg, #FFC5D3 0%, #80EF80 100%);
   left: 0;
   right: 0;
   top: 0;
@@ -1191,8 +1196,8 @@ preloader
   opacity: 0;
   width: 50px;
   height: 50px;
-  -webkit-animation: jumper 1s 0s linear infinite;
-  animation: jumper 1s 0s linear infinite;
+  -webkit-animation: jumper 3s 2s linear infinite;
+  animation: jumper 3s 2s linear infinite;
 }
 
 #preloader .jumper > div:nth-child(2) {
