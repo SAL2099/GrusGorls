@@ -11,7 +11,7 @@ export default function Header() { // Define and export the Header component
 const styles = StyleSheet.create({ // Create a StyleSheet for the Header component
   header: {
     height: 80,
-    backgroundColor: '#93E265',
+    backgroundColor: '#121C0C',
     justifyContent: 'center',
     alignItems: 'center',
     paddingTop: 20,
