@@ -1,12 +1,23 @@
-import { Text, View } from 'react-native';
-import Screen from '../../components/Screen';
+import { Text, View, StyleSheet } from 'react-native'; // Import Text, View, and StyleSheet components from react-native
+import Screen from '../../components/Screen'; // Import the Screen component from the components directory
 
-export default function HomeScreen() {
-  return (
-    <Screen>
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <Text style={{ color: '#fff' }}>Welcome to KindFind</Text>
+export default function HomeScreen() { // Define and export the HomeScreen component
+  return ( // Render the Screen component, which provides a consistent background and layout for the screen
+    <Screen> 
+      <View style={styles.container}> 
+        <Text style={styles.text}>Welcome to KindFind</Text>
       </View>
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({ // Create a StyleSheet for the HomeScreen component
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  text: {
+    color: '#fff',
+  },
+});
