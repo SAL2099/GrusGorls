@@ -1,6 +1,6 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native'; // Import StyleSheet, Text, and View components from react-native
 
-export default function Header() {
+export default function Header() { // Define and export the Header component
   return (
     <View style={styles.header}>
       <Text style={styles.title}>KindFind</Text>
@@ -8,7 +8,7 @@ export default function Header() {
   );
 }
 
-const styles = StyleSheet.create({
+const styles = StyleSheet.create({ // Create a StyleSheet for the Header component
   header: {
     height: 80,
     backgroundColor: '#93E265',
