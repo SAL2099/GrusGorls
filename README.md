@@ -1,11 +1,27 @@
 # GrusGorls
 The repository for Gru's Gorls CM3141 coursework
 
-commands:
-  - npm install native
-  - npm install react-native
+## KindFindMobile:
+### Running the app
 
-First navigate to GrusGorls folder in terminal using cd then navigate to Product folder using cd Product
-To run server use npm start in terminal
-To see what it looks like in app form, right click inspect and click on the app tab
-ctrl + c to stop server
+1. Go to the project folder:
+   cd KindFindMobile
+
+2. In terminal (one time): 
+   npm i -g expo
+
+3. Install dependencies (one time): 
+   npm install 
+
+4. Start Expo:
+   npx expo start 
+
+5. Run on a device:
+   Scan the QR code with Expo Go (Android)
+   Scan with the Camera app (iOS)
+
+   Or press:
+   a for Android emulator
+   i for iOS simulator (Mac only)
+   w for web preview
+
