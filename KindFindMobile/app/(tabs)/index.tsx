@@ -1,9 +1,12 @@
-import { Text, View } from 'react-native'; // Import Text and View components from react-native
+import { Text, View } from 'react-native';
+import Screen from '../../components/Screen';
 
-export default function HomeScreen() { // Define and export the HomeScreen component
+export default function HomeScreen() {
   return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <Text>Welcome to KindFind</Text>
-    </View>
+    <Screen>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <Text style={{ color: '#fff' }}>Welcome to KindFind</Text>
+      </View>
+    </Screen>
   );
 }

@@ -8,8 +8,8 @@ and are rendered inside the Tabs component. */
 
 export default function TabLayout() {
   return (
-    <View style={{ flex: 1 }}> 
-      <Header />  // render the Header component at the top of the screen
+    <View style={{ flex: 1, backgroundColor: '#192710' }}> 
+      <Header />  
 
       <Tabs // This is the Tabs component from expo-router, which renders the tab bar and the screens for each tab.
         screenOptions={{
