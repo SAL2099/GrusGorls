@@ -1,20 +1,34 @@
-import { StyleSheet, Text, View } from 'react-native'; // Import StyleSheet, Text, and View components from react-native
+import { StyleSheet, Text, View, Image } from 'react-native'; 
 
-export default function Header() { // Define and export the Header component
-  return (
-    <View style={styles.header}>
-      <Text style={styles.title}>KindFind</Text>
-    </View>
-  );
+export default function Header() { 
+  return ( 
+    <View style={styles.header}> 
+      <Image 
+        source={require('../assets/images/Logo2.jpg')}  //Replace with Logo2 or Logo3 if you want to test those
+        style={styles.image} 
+      /> 
+      <Text style={styles.title}>KindFind</Text> 
+    </View> 
+  ); 
 }
 
-const styles = StyleSheet.create({ // Create a StyleSheet for the Header component
+const styles = StyleSheet.create({
   header: {
-    height: 80,
+    height: 100,
     backgroundColor: '#121C0C',
-    justifyContent: 'center',
-    alignItems: 'center',
+    flexDirection: 'row', 
+    alignItems: 'center', 
+    justifyContent: 'center', 
     paddingTop: 20,
+    paddingHorizontal: 15,
+  },
+  image: {
+    width: 60,
+    height: 60,
+    position: 'absolute', // Pulls image out of the layout flow
+    left: 15,            // Anchors it to the left side
+    top: 20,             // Adjust based on your paddingTop
+    borderRadius: 10,
   },
   title: {
     color: '#CE6674',

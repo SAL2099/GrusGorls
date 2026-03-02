@@ -23,9 +23,9 @@ function distanceKm(aLat: number, aLng: number, bLat: number, bLng: number) { //
   const x =
     Math.sin(dLat / 2) * Math.sin(dLat / 2) +
     Math.cos(deg2rad(aLat)) *
-      Math.cos(deg2rad(bLat)) *
-      Math.sin(dLng / 2) *
-      Math.sin(dLng / 2);
+    Math.cos(deg2rad(bLat)) *
+    Math.sin(dLng / 2) *
+    Math.sin(dLng / 2);
   const c = 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
   return R * c;
 }
@@ -177,12 +177,11 @@ export default function MapScreen() { // Main component for the Map tab
   const shownRadius = lastSuccessRadiusKm ?? radiusKm; // show the last successfully loaded radius in the UI, even if the user has changed
   return (
     <Screen>
-      <View style={styles.container}> 
+      <View style={styles.container}>
         {/*Radius selection and status messages */}
         <View style={styles.controls}>
-          <Text style={styles.controlsTitle}>Radius</Text> {/*  */}
+          <Text style={styles.controlsTitle}>Radius</Text>
 
-          {/* Generates 1km, 3km, 5km buttons*/}
           <View style={styles.row}>
             {[1, 3, 5].map((r) => (
               <Pressable
@@ -196,13 +195,11 @@ export default function MapScreen() { // Main component for the Map tab
             <Text style={styles.valueText}>{radiusKm}km</Text>
           </View>
 
-          {/* Updates based on shop count and location status */}
           <Text style={styles.resultsText}>
             Showing {shops.length} place{shops.length === 1 ? "" : "s"}
             {userCoords ? ` within ${shownRadius}km` : ""}
           </Text>
 
-          {/* Feedback Logic Loading, Errors, and Empty States */} 
           {loadingShops ? <Text style={styles.hintText}>Loading shops…</Text> : null}
 
           {shopsError ? (
@@ -213,7 +210,7 @@ export default function MapScreen() { // Main component for the Map tab
 
           {!loadingShops && !shopsError && shops.length === 0 && userCoords ? (
             <Text style={styles.hintText}>
-             {"\n"} No charity or second-hand shops found within {radiusKm}km. Try a further distance.
+              No charity or second-hand shops found within {radiusKm}km. Try a further distance.
             </Text>
           ) : null}
 
@@ -253,7 +250,7 @@ export default function MapScreen() { // Main component for the Map tab
                   key={shop.id}
                   coordinate={{ latitude: shop.lat, longitude: shop.lng }}
                   title={shop.name}
-                  description={shop.label ?? ""} // ✅ correct field
+                  description={shop.label ?? ""} 
                   onPress={() => setSelectedShop(shop)}
                 />
               ))}
@@ -263,14 +260,15 @@ export default function MapScreen() { // Main component for the Map tab
 
         {/* Details modal */}
         {/* Modal to show shop details when a marker is pressed */}
-        <Modal 
+        <Modal
           visible={!!selectedShop}
           transparent
           animationType="slide"
           onRequestClose={() => setSelectedShop(null)}
         >
-          <View style={styles.modalBackdrop}> {/* Backdrop to dim the background and close modal when pressed */}
-            <Pressable 
+          <View style={styles.modalBackdrop}> 
+            {/* Backdrop to dim the background and close modal when pressed */}
+            <Pressable
               style={StyleSheet.absoluteFill}
               onPress={() => setSelectedShop(null)}
             />
@@ -323,11 +321,11 @@ const styles = StyleSheet.create({
   /* Radius Selection Pills */
   row: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 8 },
 
-  pill: { 
-    paddingHorizontal: 12, 
-    paddingVertical: 7, 
+  pill: {
+    paddingHorizontal: 12,
+    paddingVertical: 7,
     borderRadius: 999, // Makes the button fully rounded
-    backgroundColor: "#CE6674" 
+    backgroundColor: "#CE6674"
   },
   pillSelected: { backgroundColor: "#f30678" }, // Highlight color for active radius
   pillText: { color: "#fff", fontWeight: "700" },
@@ -343,27 +341,27 @@ const styles = StyleSheet.create({
   loadingText: { marginTop: 8, color: "#fff" },
 
   /* Shop detail module (Bottom Sheet) */
-  modalBackdrop: { 
-    flex: 1, 
+  modalBackdrop: {
+    flex: 1,
     justifyContent: "flex-end", // Aligns modal to bottom of screen
     backgroundColor: "rgba(0,0,0,0.4)"  // Semi-transparent backdrop to dim the background and focus on the modal
   },
-  modalCard: { 
+  modalCard: {
     backgroundColor: "#121C0C", // Dark background for the modal card
-    padding: 16, 
-    borderTopLeftRadius: 18, 
-    borderTopRightRadius: 18 
+    padding: 16,
+    borderTopLeftRadius: 18,
+    borderTopRightRadius: 18
   },
   modalTitle: { color: "#fff", fontSize: 18, fontWeight: "800" },
   modalSub: { color: "#fff", opacity: 0.85, marginTop: 6 },
 
   /* Modal buttons */
-  closeBtn: { 
-    marginTop: 14, 
-    paddingVertical: 10, 
-    borderRadius: 12, 
-    backgroundColor: "#CE6674", 
-    alignItems: "center" 
+  closeBtn: {
+    marginTop: 14,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: "#CE6674",
+    alignItems: "center"
   },
   closeBtnText: { color: "#fff", fontWeight: "800" },
 
@@ -376,10 +374,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  userDot: { 
-    width: 17, 
-    height: 17, 
-    borderRadius: 10, 
+  userDot: {
+    width: 17,
+    height: 17,
+    borderRadius: 10,
     backgroundColor: "#3B82F6" // Solid blue core
   },
 });
