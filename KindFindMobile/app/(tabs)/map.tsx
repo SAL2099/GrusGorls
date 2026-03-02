@@ -320,7 +320,7 @@ const styles = StyleSheet.create({
   controls: { paddingHorizontal: 14, paddingTop: 10, paddingBottom: 10 },
   controlsTitle: { color: "#fff", fontSize: 16, fontWeight: "700", marginBottom: 6 },
 
-  /* RADIUS SELECTION PILLS*/
+  /* Radius Selection Pills */
   row: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 8 },
 
   pill: { 
