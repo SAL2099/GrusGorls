@@ -4,6 +4,7 @@ import * as ImagePicker from "expo-image-picker"; // Expo module for picking ima
 import { uploadImage } from "../lib/uploadImage"; // Custom function to handle image upload to Supabase Storage, adjust path if needed
 import { supabase } from "../lib/supabase"; // Supabase client instance for database interactions, adjust path if needed
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view'; // Component to ensure the keyboard does not cover input fields on mobile devices
+import Screen from "../components/Screen"; // Custom Screen component (probably adds padding and background)
 
 export default function UploadScreen() { // Main component for the upload screen
   const [imageUrl, setImageUrl] = useState(null); // State to hold the URL of the uploaded image
@@ -58,68 +59,70 @@ export default function UploadScreen() { // Main component for the upload screen
   };
 
   return ( // Render the UI for the upload screen
-    <View style={styles.container}> 
-      <Text style={styles.title}>Upload an Image</Text> 
+    <Screen>
+      <View style={styles.container}>
+        <Text style={styles.title}>Upload an Image</Text>
 
-      <Button title="Pick Image" onPress={pickAndUpload} />
+        <Button title="Pick Image" onPress={pickAndUpload} />
 
-      {/* Render the image and metadata inputs if an image URL is available */}
-      {imageUrl && (
-        <>
-          <KeyboardAwareScrollView
-            contentContainerStyle={{ flexGrow: 1, padding: 20 }}
-            enableOnAndroid={true}
-          >
-            
-          <Image source={{ uri: imageUrl }} style={styles.image} />
+        {/* Render the image and metadata inputs if an image URL is available */}
+        {imageUrl && (
+          <>
+            <KeyboardAwareScrollView
+              contentContainerStyle={{ flexGrow: 1, padding: 20 }}
+              enableOnAndroid={true}
+            >
 
-          <TextInput
-            placeholder="Title"
-            value={title}
-            onChangeText={setTitle}
-            style={styles.input}
-          />
+              <Image source={{ uri: imageUrl }} style={styles.image} />
 
-          <TextInput
-            placeholder="Description"
-            value={description}
-            onChangeText={setDescription}
-            style={styles.input}
-          />
+              <TextInput
+                placeholder="Title"
+                value={title}
+                onChangeText={setTitle}
+                style={styles.input}
+              />
 
-          <TextInput
-            placeholder="Size"
-            value={size}
-            onChangeText={setSize}
-            style={styles.input}
-          />
+              <TextInput
+                placeholder="Description"
+                value={description}
+                onChangeText={setDescription}
+                style={styles.input}
+              />
 
-          <TextInput
-            placeholder="Location"
-            value={location}
-            onChangeText={setLocation}
-            style={styles.input}
-          />
+              <TextInput
+                placeholder="Size"
+                value={size}
+                onChangeText={setSize}
+                style={styles.input}
+              />
 
-          <TextInput
-            placeholder="Price"
-            value={price}
-            onChangeText={setPrice}
-            style={styles.input}
-          />
+              <TextInput
+                placeholder="Location"
+                value={location}
+                onChangeText={setLocation}
+                style={styles.input}
+              />
 
-          <Button title="Save Info" onPress={saveMetadata} />
-          </KeyboardAwareScrollView>
-        </>
-      )}
-    </View>
+              <TextInput
+                placeholder="Price"
+                value={price}
+                onChangeText={setPrice}
+                style={styles.input}
+              />
+
+              <Button title="Save Info" onPress={saveMetadata} />
+            </KeyboardAwareScrollView>
+          </>
+        )}
+      </View>
+    </Screen>
   );
 }
 
 // Styles for the upload screen components
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 20, alignItems: "center" },
-  title: { fontSize: 22, marginBottom: 20 },
+  title: { fontSize: 22, marginBottom: 20, color: "#FFF" },
   image: { width: 250, height: 250, marginVertical: 20 },
   input: {
     width: "100%",
