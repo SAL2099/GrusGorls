@@ -1,8 +1,14 @@
+import 'react-native-url-polyfill/auto';
+import 'react-native-get-random-values';
+import { decode as atob, encode as btoa } from 'base-64';
+
+if (!global.atob) global.atob = atob;
+if (!global.btoa) global.btoa = btoa;
+
 import { Tabs } from 'expo-router'; //Import tabs conponent from expo for nav
 import { View } from 'react-native'; // Import View components from react-native
 import Header from '../../components/Header'; //Imports header 
 import TabIcon from '../../components/TabIcons'; //Imports logic for icons
-
 
 /* This is where things that are common to all the tabs go, like the header and the tab bar. 
 The individual screens are in their own files (index.tsx, map.tsx, profile.tsx, upload.tsx)
