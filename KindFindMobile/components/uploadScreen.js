@@ -55,6 +55,9 @@ export default function UploadScreen() { // Main component for the upload screen
       setTitle("");
       setDescription("");
       setImageUrl(null);
+      setSize("");
+      setLocation("");
+      setPrice("");
     }
   };
 
