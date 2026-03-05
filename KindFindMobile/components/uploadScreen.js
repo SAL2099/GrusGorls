@@ -4,7 +4,7 @@ import * as ImagePicker from "expo-image-picker"; // Expo module for picking ima
 import { uploadImage } from "../lib/uploadImage"; // Custom function to handle image upload to Supabase Storage, adjust path if needed
 import { supabase } from "../lib/supabase"; // Supabase client instance for database interactions, adjust path if needed
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view'; // Component to ensure the keyboard does not cover input fields on mobile devices
-import Screen from "../components/Screen"; // Custom Screen component (probably adds padding and background)
+import Screen from "../components/Screen"; // Custom Screen component 
 
 export default function UploadScreen() { // Main component for the upload screen
   const [imageUrl, setImageUrl] = useState(null); // State to hold the URL of the uploaded image
@@ -36,8 +36,18 @@ export default function UploadScreen() { // Main component for the upload screen
   };
 
   const saveMetadata = async () => { // Function to save the image metadata to the Supabase database
+
+    const { data: userData } = await supabase.auth.getUser();
+    const userId = userData?.user?.id;
+
+    if (!userId) { // If the user is not logged in, alert them and return early
+      alert("Please log in first");
+      return;
+    }
+
     const { error } = await supabase.from("photos").insert([ // Insert a new record into the "photos" table with the image URL and metadata
       {
+        user_id: userId,
         image_url: imageUrl,
         title,
         description,
