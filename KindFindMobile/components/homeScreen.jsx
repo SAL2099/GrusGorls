@@ -1,25 +1,27 @@
-import { useEffect, useState, useCallback } from "react";
-import { View, Text, Image, FlatList, ActivityIndicator, Dimensions } from "react-native";
+import { useEffect, useState, useCallback } from "react"; // Import necessary hooks from React
+import { View, Text, Image, FlatList, ActivityIndicator, Dimensions } from "react-native"; // Import UI components from React Native
 import { supabase } from "../lib/supabase"; // adjust path if needed
 
-export default function HomeScreen() {
-  const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [page, setPage] = useState(0);
-  const [hasMore, setHasMore] = useState(true);
+export default function HomeScreen() { // Main component for the home screen that displays a feed of uploaded items
+  const [items, setItems] = useState([]); // State to hold the list of items fetched from the database
+  const [loading, setLoading] = useState(true); // State to indicate whether the initial data is still loading
+  const [refreshing, setRefreshing] = useState(false); // State to indicate whether the list is being refreshed (pull-to-refresh)
+  const [loadingMore, setLoadingMore] = useState(false); // State to indicate whether more items are being loaded (infinite scroll)
+  const [page, setPage] = useState(0); // State to keep track of the current page for pagination
+  const [hasMore, setHasMore] = useState(true); // State to indicate whether there are more items to load (used for infinite scroll)
 
-  const PAGE_SIZE = 10;
+  const PAGE_SIZE = 10; // Number of items to fetch per page for pagination
 
-  const screenWidth = Dimensions.get("window").width;
-  const spacing = 10;
-  const cardWidth = (screenWidth - spacing) / 2;
+  const screenWidth = Dimensions.get("window").width; // Get the width of the device screen to calculate card sizes for a responsive layout
+  const spacing = 10; // Spacing between cards in the grid layout
+  const cardWidth = (screenWidth - spacing) / 2; // Calculate the width of each card in a 2-column grid layout, accounting for spacing
 
-  useEffect(() => { 
+  // Load the initial set of items when the component mounts
+  useEffect(() => {  
     loadInitial(); 
     }, []); 
     
+  // Function to load the initial set of items from the Supabase database
   async function loadInitial() { 
     setLoading(true); 
     
@@ -38,6 +40,7 @@ export default function HomeScreen() {
         setLoading(false); 
   }
 
+  // Function to load more items for infinite scrolling when the user reaches the end of the list
   async function loadMore() {
     if (loadingMore || loading || !hasMore) return;
 
@@ -77,6 +80,7 @@ export default function HomeScreen() {
     setRefreshing(false);
   }, []);
 
+  // Function to render each item in the FlatList, displaying the image and its metadata in a card layout
   const renderItem = ({ item, index }) => (
     <View 
         style={{ 
@@ -104,10 +108,12 @@ export default function HomeScreen() {
     </View>
   );
 
+  // If the initial data is still loading, show a loading indicator instead of the list
   if (loading) {
     return <ActivityIndicator size="large" style={{ marginTop: 50 }} />;
   }
 
+  // Render the FlatList of items, with support for pull-to-refresh and infinite scrolling
   return (
     <FlatList
       data={items}

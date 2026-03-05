@@ -1,9 +1,9 @@
-import 'react-native-url-polyfill/auto';
-import 'react-native-get-random-values';
-import { decode as atob, encode as btoa } from 'base-64';
+import 'react-native-url-polyfill/auto'; // import polyfull for URL and URLSearchParams to ensure compatibility across platforms
+import 'react-native-get-random-values'; //import polyfill for crypto.getRandomValues, which is used by uuid to generate unique IDs
+import { decode as atob, encode as btoa } from 'base-64'; //import base64 encoding and decoding functions
 
-if (!global.atob) global.atob = atob;
-if (!global.btoa) global.btoa = btoa;
+if (!global.atob) global.atob = atob; // If the global atob function is not defined, assign the imported atob function to it
+if (!global.btoa) global.btoa = btoa; // If the global btoa function is not defined, assign the imported btoa function to it
 
 import { Tabs } from 'expo-router'; //Import tabs conponent from expo for nav
 import { View } from 'react-native'; // Import View components from react-native

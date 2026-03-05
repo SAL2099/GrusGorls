@@ -1,6 +1,6 @@
-import { StyleSheet, Text, View, Image } from 'react-native'; 
+import { StyleSheet, Text, View, Image } from 'react-native'; // Import necessary components from react-native
 
-export default function Header() { 
+export default function Header() { // The Header component displays the app's logo and title at the top of the screen
   return ( 
     <View style={styles.header}> 
       <Image 
@@ -12,9 +12,10 @@ export default function Header() {
   ); 
 }
 
+// Define styles for the Header component using StyleSheet
 const styles = StyleSheet.create({
   header: {
-    height: 100,
+    height: 125,
     backgroundColor: '#121C0C',
     flexDirection: 'row', 
     alignItems: 'center', 
@@ -26,8 +27,8 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     position: 'absolute', // Pulls image out of the layout flow
-    left: 15,            // Anchors it to the left side
-    top: 20,             // Adjust based on your paddingTop
+    left: 15,            
+    top: 40,             
     borderRadius: 10,
   },
   title: {
