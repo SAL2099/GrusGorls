@@ -27,7 +27,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     position: 'absolute', // Pulls image out of the layout flow
-    left: 15,            // Anchors it to the left side
+    left: 15,            
     top: 40,             
     borderRadius: 10,
   },
