@@ -86,7 +86,9 @@ export default function UploadScreen() { // Main component for the upload screen
               enableOnAndroid={true}
             >
 
+              <View style = {{ alignItems : 'center' }}>
               <Image source={{ uri: imageUrl }} style={styles.image} />
+              </View>
 
               <TextInput
                 placeholder="Title"
@@ -116,12 +118,15 @@ export default function UploadScreen() { // Main component for the upload screen
                 style={styles.input}
               />
 
+              <View style = {{ flexDirection: 'row', alignItems : 'center'}}>
+              <Text style={{ fontSize : 15, color: "#FFF" }}>£</Text>
               <TextInput
                 placeholder="Price"
                 value={price}
                 onChangeText={setPrice}
-                style={styles.input}
+                style={styles.price}
               />
+              </View>
 
               <Button title="Save Info" onPress={saveMetadata} />
             </KeyboardAwareScrollView>
@@ -143,5 +148,15 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 8,
     marginBottom: 10,
+    backgroundColor: "#FFF",
+  },
+  price: {
+    width: "94%",
+    padding: 10,
+    borderWidth: 1,
+    borderRadius: 8,
+    marginBottom: 10,
+    marginLeft: 10,
+    backgroundColor: "#FFF",
   },
 });
