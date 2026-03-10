@@ -210,11 +210,30 @@ const styles = StyleSheet.create({
     },
 
     // Style for the title text at the top of the form
-    title: { color: "#fff", fontSize: 22, fontWeight: "900", marginBottom: 14 },
-    roleRow: { flexDirection: "row", gap: 10, marginBottom: 12 },
-    rolePill: { flex: 1, paddingVertical: 10, borderRadius: 999, backgroundColor: "rgba(255,255,255,0.12)", alignItems: "center" },
+    title: { 
+        color: "#fff", 
+        fontSize: 22, 
+        fontWeight: "900", 
+        marginBottom: 14 
+    },
+
+    roleRow: { 
+        flexDirection: "row", 
+        gap: 10, 
+        marginBottom: 12 
+    },
+
+    rolePill: { 
+        flex: 1, 
+        paddingVertical: 10, 
+        borderRadius: 999, 
+        backgroundColor: "rgba(255,255,255,0.12)", 
+        alignItems: "center" 
+    },
+
     rolePillActive: { backgroundColor: "#CE6674" },
     roleText: { color: "#fff", fontWeight: "900" },
+
     input: {
         backgroundColor: "#121C0C",
         borderRadius: 12,
@@ -223,8 +242,21 @@ const styles = StyleSheet.create({
         color: "#fff",
         marginBottom: 10,
     },
-    button: { marginTop: 6, backgroundColor: "#f30678", paddingVertical: 12, borderRadius: 12, alignItems: "center" },
+
+    button: { 
+        marginTop: 6, 
+        backgroundColor: "#f30678", 
+        paddingVertical: 12, 
+        borderRadius: 12, 
+        alignItems: "center" 
+    },
+
     buttonText: { color: "#fff", fontWeight: "900" },
-    link: { color: "#fff", opacity: 0.8, marginTop: 14, textAlign: "center" },
+    link: { 
+        color: "#fff", 
+        opacity: 0.8, 
+        marginTop: 14, 
+        textAlign: "center" 
+    },
 });
 

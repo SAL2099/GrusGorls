@@ -314,12 +314,27 @@ const styles = StyleSheet.create({
   // Main screen layout
   container: { flex: 1 },
 
-  /* Control Panel Top UI */
-  controls: { paddingHorizontal: 14, paddingTop: 10, paddingBottom: 10 },
-  controlsTitle: { color: "#fff", fontSize: 16, fontWeight: "700", marginBottom: 6 },
+  // Control Panel Top UI 
+  controls: { 
+    paddingHorizontal: 14, 
+    paddingTop: 10, 
+    paddingBottom: 10 
+  },
 
-  /* Radius Selection Pills */
-  row: { flexDirection: "row", alignItems: "center", flexWrap: "wrap", gap: 8 },
+  controlsTitle: { 
+    color: "#fff", 
+    fontSize: 16, 
+    fontWeight: "700", 
+    marginBottom: 6 
+  },
+
+  // Radius Selection Pills 
+  row: { 
+    flexDirection: "row", 
+    alignItems: "center", 
+    flexWrap: "wrap", 
+    gap: 8 
+  },
 
   pill: {
     paddingHorizontal: 12,
@@ -327,35 +342,63 @@ const styles = StyleSheet.create({
     borderRadius: 999, // Makes the button fully rounded
     backgroundColor: "#CE6674"
   },
+
   pillSelected: { backgroundColor: "#f30678" }, // Highlight color for active radius
   pillText: { color: "#fff", fontWeight: "700" },
   valueText: { color: "#fff", marginLeft: 6, opacity: 0.9 },
 
-  /* feedback text (Status & Hints) */
-  resultsText: { color: "#fff", opacity: 0.85, marginTop: 8 },
-  hintText: { color: "#fff", opacity: 0.7, marginTop: 6, fontSize: 12 },
+  // feedback text for results, loading state, errors, and hints
+  resultsText: { 
+    color: "#fff", 
+    opacity: 0.85, 
+    marginTop: 8 
+  },
 
-  /* Map and loading state --- */
+  hintText: { 
+    color: "#fff", 
+    opacity: 0.7, 
+    marginTop: 6, 
+    fontSize: 12 
+  },
+
+  //Map and loading state
   mapWrap: { flex: 1, overflow: "hidden" },
-  loading: { flex: 1, justifyContent: "center", alignItems: "center" },
+
+  loading: { 
+    flex: 1, 
+    justifyContent: "center", 
+    alignItems: "center" 
+  },
+
   loadingText: { marginTop: 8, color: "#fff" },
 
-  /* Shop detail module (Bottom Sheet) */
+  //Shop detail module (Bottom Information card) 
   modalBackdrop: {
     flex: 1,
     justifyContent: "flex-end", // Aligns modal to bottom of screen
     backgroundColor: "rgba(0,0,0,0.4)"  // Semi-transparent backdrop to dim the background and focus on the modal
   },
+
   modalCard: {
     backgroundColor: "#121C0C", // Dark background for the modal card
     padding: 16,
     borderTopLeftRadius: 18,
     borderTopRightRadius: 18
   },
-  modalTitle: { color: "#fff", fontSize: 18, fontWeight: "800" },
-  modalSub: { color: "#fff", opacity: 0.85, marginTop: 6 },
 
-  /* Modal buttons */
+  modalTitle: { 
+    color: "#fff", 
+    fontSize: 18, 
+    fontWeight: "800" 
+  },
+
+  modalSub: { 
+    color: "#fff", 
+    opacity: 0.85, 
+    marginTop: 6 
+  },
+
+  //Modal buttons 
   closeBtn: {
     marginTop: 14,
     paddingVertical: 10,
@@ -363,21 +406,23 @@ const styles = StyleSheet.create({
     backgroundColor: "#CE6674",
     alignItems: "center"
   },
+
   closeBtnText: { color: "#fff", fontWeight: "800" },
 
-  /* User Location Marker */
+  //User Location Marker 
   userMarker: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: "rgba(59,130,246,0.2)", // Translucent outer pulse
+    backgroundColor: "rgba(59,130,246,0.2)", 
     justifyContent: "center",
     alignItems: "center",
   },
+
   userDot: {
     width: 17,
     height: 17,
     borderRadius: 10,
-    backgroundColor: "#3B82F6" // Solid blue core
+    backgroundColor: "#3B82F6" 
   },
 });

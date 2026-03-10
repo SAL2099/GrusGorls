@@ -55,11 +55,22 @@ export default function RootLayout() {
 
   if (!ready) return null;
 
-  // Render the screen based on the route
+  // Render the screen based on the route 
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="(tabs)" />
       <Stack.Screen name="(auth)" />
+
+      <Stack.Screen 
+        name="listing/[id]" 
+        options={{ 
+          headerShown: true, 
+          headerStyle: { backgroundColor: "#121C0C" },
+          headerTintColor: "#fff",
+          headerTitleStyle: { fontWeight: "900" },
+          headerBackTitle: "Back"
+        }} 
+      />
     </Stack>
   );
 }

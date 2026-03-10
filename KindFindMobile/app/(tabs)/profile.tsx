@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react"; //Import react
 import { View, Text, StyleSheet, ActivityIndicator, Pressable, TextInput, Alert, Image, FlatList, Dimensions } from "react-native";
 import Screen from "../../components/Screen"; //import custom Screen component for consistent styling and layout
 import { supabase } from "../../lib/supabase"; //Import supabase client for authentication and database interactions
+import { useRouter } from "expo-router";
 
 const screenWidth = Dimensions.get("window").width;
 const horizontalPadding = 32; // container padding: 16 left + 16 right
@@ -10,6 +11,8 @@ const imageSize = (screenWidth - horizontalPadding - gap * 2 - 28) / 3;
 
 // The ProfileScreen component displays the user's profile information and allows them to edit it or log out
 export default function ProfileScreen() {
+
+  const router = useRouter();
   // State variables to manage loading state, profile data, edit mode, and form inputs
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
@@ -238,8 +241,26 @@ export default function ProfileScreen() {
                 scrollEnabled={false}
                 columnWrapperStyle={styles.uploadRow}
                 contentContainerStyle={styles.uploadGrid}
+                
+                // When an upload is pressed, navigate to the listing details screen and pass the listing data as params
                 renderItem={({ item }) => (
-                  <Pressable style={styles.imageWrapper}>
+                  <Pressable
+                    style={styles.imageWrapper}
+                    onPress={() => {
+                      router.push({
+                        pathname: "/listing/[id]",
+                        params: {
+                          id: item.id,
+                          title: item.title,
+                          image_url: item.image_url,
+                          description: item.description,
+                          price: item.price,
+                          size: item.size,
+                          location: item.location
+                        }
+                      });
+                    }}
+                  >
                     <Image
                       source={{ uri: item.image_url }}
                       style={styles.uploadImage}
@@ -258,8 +279,17 @@ export default function ProfileScreen() {
 // Define styles for the ProfileScreen component using StyleSheet
 const styles = StyleSheet.create({
   // Container style for the whole screen
-  container: { flex: 1, padding: 16 },
-  center: { flex: 1, justifyContent: "center", alignItems: "center" },
+  container: { 
+    flex: 1, 
+    padding: 16, 
+    gap: 16 
+  },
+
+  center: { 
+    flex: 1, 
+    justifyContent: "center", 
+    alignItems: "center" 
+  },
 
   title: {
     color: "#fff",
@@ -274,12 +304,35 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 14
   },
-  name: { color: "#fff", fontSize: 18, fontWeight: "900", marginTop: 8 },
-  sub: { color: "#fff", opacity: 0.85, marginTop: 6 },
+
+  name: { 
+    color: "#fff", 
+    fontSize: 18, 
+    fontWeight: "900", 
+    marginTop: 8 
+  },
+
+  sub: { 
+    color: "#fff", 
+    opacity: 0.85, 
+    marginTop: 6 
+  },
 
   // Styles for the edit mode
-  sectionTitle: { color: "#fff", fontSize: 16, fontWeight: "800", marginTop: 10, marginBottom: 10 },
-  label: { color: "#fff", opacity: 0.8, marginTop: 10, marginBottom: 6 },
+  sectionTitle: { 
+    color: "#fff", 
+    fontSize: 16, 
+    fontWeight: "800", 
+    marginTop: 10, 
+    marginBottom: 10 
+  },
+
+  label: { 
+    color: "#fff", 
+    opacity: 0.8, 
+    marginTop: 10, 
+    marginBottom: 6 
+  },
 
   // Styles for the input fields and buttons
   input: {
@@ -291,7 +344,14 @@ const styles = StyleSheet.create({
   },
 
   // Primary button style, with variations for secondary and logout actions
-  button: { marginTop: 12, backgroundColor: "#CE6674", paddingVertical: 10, borderRadius: 12, alignItems: "center" },
+  button: { 
+    marginTop: 12, 
+    backgroundColor: "#CE6674", 
+    paddingVertical: 10, 
+    borderRadius: 12, 
+    alignItems: "center" 
+  },
+
   secondaryBtn: { backgroundColor: "rgba(255,255,255,0.12)" },
   logoutBtn: { backgroundColor: "#f30678" },
   buttonText: { color: "#fff", fontWeight: "900" },

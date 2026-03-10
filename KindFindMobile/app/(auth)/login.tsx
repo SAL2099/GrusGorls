@@ -108,7 +108,13 @@ const styles = StyleSheet.create({
         justifyContent: "center",
         paddingBottom: 20,
     },
-    title: { color: "#fff", fontSize: 22, fontWeight: "900", marginBottom: 14 },
+
+    title: { 
+        color: "#fff", 
+        fontSize: 22, 
+        fontWeight: "900", 
+        marginBottom: 14 
+    },
 
     // Style for the input fields, with a dark background, rounded corners, and white text
     input: {
@@ -130,7 +136,12 @@ const styles = StyleSheet.create({
     },
     buttonText: { color: "#fff", fontWeight: "900" },
 
-    link: { color: "#fff", opacity: 0.8, marginTop: 14, textAlign: "center" },
+    link: { 
+        color: "#fff", 
+        opacity: 0.8, 
+        marginTop: 14, 
+        textAlign: "center" 
+    },
 
     // Style for the logo image at the top of the login screen, centered with rounded corners
     image: {

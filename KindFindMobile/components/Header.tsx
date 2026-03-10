@@ -12,8 +12,9 @@ export default function Header() { // The Header component displays the app's lo
   ); 
 }
 
-// Define styles for the Header component using StyleSheet
+// Define styles for the Header
 const styles = StyleSheet.create({
+
   header: {
     height: 125,
     backgroundColor: '#121C0C',
@@ -23,14 +24,16 @@ const styles = StyleSheet.create({
     paddingTop: 20,
     paddingHorizontal: 15,
   },
+
   image: {
     width: 60,
     height: 60,
-    position: 'absolute', // Pulls image out of the layout flow
+    position: 'absolute', 
     left: 15,            
     top: 40,             
     borderRadius: 10,
   },
+
   title: {
     color: '#CE6674',
     fontSize: 24,
