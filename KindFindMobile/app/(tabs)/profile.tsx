@@ -1,7 +1,12 @@
 import React, { useEffect, useState } from "react"; //Import react 
-import { View, Text, StyleSheet, ActivityIndicator, Pressable, TextInput, Alert } from "react-native";
+import { View, Text, StyleSheet, ActivityIndicator, Pressable, TextInput, Alert, Image, FlatList, Dimensions } from "react-native";
 import Screen from "../../components/Screen"; //import custom Screen component for consistent styling and layout
 import { supabase } from "../../lib/supabase"; //Import supabase client for authentication and database interactions
+
+const screenWidth = Dimensions.get("window").width;
+const horizontalPadding = 32; // container padding: 16 left + 16 right
+const gap = 8;
+const imageSize = (screenWidth - horizontalPadding - gap * 2 - 28) / 3;
 
 // The ProfileScreen component displays the user's profile information and allows them to edit it or log out
 export default function ProfileScreen() {
@@ -9,6 +14,7 @@ export default function ProfileScreen() {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
   const [editing, setEditing] = useState(false);
+  const [uploads, setUploads] = useState<any[]>([]);
 
   // Form state for profile fields
   const [displayName, setDisplayName] = useState("");
@@ -47,6 +53,20 @@ export default function ProfileScreen() {
     setStoreName(data.store_name ?? "");
     setOpeningTimes(data.opening_times ?? "");
     setAddress(data.address ?? "");
+
+    // Fetch this user's uploads
+    const { data: photoData, error: photoError } = await supabase
+      .from("photos")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+
+    if (photoError) {
+      Alert.alert("Photo error", photoError.message);
+      setUploads([]);
+    } else {
+      setUploads(photoData ?? []);
+    }
     setLoading(false);
   }
 
@@ -202,6 +222,34 @@ export default function ProfileScreen() {
             </>
           )}
         </View>
+
+        {/* Show the user's uploads */}
+        {!editing && (
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>My uploads</Text>
+
+            {uploads.length === 0 ? (
+              <Text style={styles.sub}>You haven’t uploaded anything yet.</Text>
+            ) : (
+              <FlatList<any>
+                data={uploads}
+                keyExtractor={(item) => item.id.toString()}
+                numColumns={3}
+                scrollEnabled={false}
+                columnWrapperStyle={styles.uploadRow}
+                contentContainerStyle={styles.uploadGrid}
+                renderItem={({ item }) => (
+                  <Pressable style={styles.imageWrapper}>
+                    <Image
+                      source={{ uri: item.image_url }}
+                      style={styles.uploadImage}
+                    />
+                  </Pressable>
+                )}
+              />
+            )}
+          </View>
+        )}
       </View>
     </Screen>
   );
@@ -213,18 +261,18 @@ const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
   center: { flex: 1, justifyContent: "center", alignItems: "center" },
 
-  title: { 
-    color: "#fff", 
-    fontSize: 22, 
-    fontWeight: "900", 
-    marginBottom: 12 
+  title: {
+    color: "#fff",
+    fontSize: 22,
+    fontWeight: "900",
+    marginBottom: 12
   },
 
   // Card style for the profile information section
-  card: { 
-    backgroundColor: "#121C0C", 
-    borderRadius: 16, 
-    padding: 14 
+  card: {
+    backgroundColor: "#121C0C",
+    borderRadius: 16,
+    padding: 14
   },
   name: { color: "#fff", fontSize: 18, fontWeight: "900", marginTop: 8 },
   sub: { color: "#fff", opacity: 0.85, marginTop: 6 },
@@ -247,5 +295,29 @@ const styles = StyleSheet.create({
   secondaryBtn: { backgroundColor: "rgba(255,255,255,0.12)" },
   logoutBtn: { backgroundColor: "#f30678" },
   buttonText: { color: "#fff", fontWeight: "900" },
+
+  // Styles for the uploads grid
+  uploadGrid: {
+    marginTop: 10,
+  },
+
+  uploadRow: {
+    justifyContent: "flex-start",
+    gap: 8,
+    marginBottom: 8,
+  },
+
+  imageWrapper: {
+    width: imageSize,
+    height: imageSize,
+    borderRadius: 12,
+    overflow: "hidden",
+    backgroundColor: "rgba(255,255,255,0.08)",
+  },
+
+  uploadImage: {
+    width: "100%",
+    height: "100%",
+  },
 });
 
