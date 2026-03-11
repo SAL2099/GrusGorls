@@ -1,8 +1,10 @@
-import React, { useEffect, useState } from "react"; //Import react 
+import React, { useState, useCallback } from "react";
 import { View, Text, StyleSheet, ActivityIndicator, Pressable, TextInput, Alert, Image, FlatList, Dimensions } from "react-native";
 import Screen from "../../components/Screen"; //import custom Screen component for consistent styling and layout
 import { supabase } from "../../lib/supabase"; //Import supabase client for authentication and database interactions
 import { useRouter } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
+
 
 const screenWidth = Dimensions.get("window").width;
 const horizontalPadding = 32; // container padding: 16 left + 16 right
@@ -111,9 +113,11 @@ export default function ProfileScreen() {
   }
 
   // Load the profile data when the component mounts
-  useEffect(() => {
-    loadProfile();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      loadProfile();
+    }, [])
+  );
 
   // Show a loading indicator while the profile data is being fetched
   if (loading) {
