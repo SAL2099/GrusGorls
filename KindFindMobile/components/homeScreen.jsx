@@ -1,8 +1,10 @@
-import { useEffect, useState, useCallback } from "react"; // Import necessary hooks from React
+import { useEffect, useState, useCallback } from "react";
+import { useIsFocused } from "@react-navigation/native";
 import { View, Text, Image, FlatList, ActivityIndicator, Dimensions } from "react-native"; // Import UI components from React Native
 import { supabase } from "../lib/supabase"; // adjust path if needed
 
 export default function HomeScreen() { // Main component for the home screen that displays a feed of uploaded items
+  const isFocused = useIsFocused();
   const [items, setItems] = useState([]); // State to hold the list of items fetched from the database
   const [loading, setLoading] = useState(true); // State to indicate whether the initial data is still loading
   const [refreshing, setRefreshing] = useState(false); // State to indicate whether the list is being refreshed (pull-to-refresh)
@@ -17,27 +19,29 @@ export default function HomeScreen() { // Main component for the home screen tha
   const cardWidth = (screenWidth - spacing) / 2; // Calculate the width of each card in a 2-column grid layout, accounting for spacing
 
   // Load the initial set of items when the component mounts
-  useEffect(() => {  
-    loadInitial(); 
-    }, []); 
-    
+  useEffect(() => {
+    if (isFocused) {
+      loadInitial();
+    }
+  }, [isFocused]);
+
   // Function to load the initial set of items from the Supabase database
-  async function loadInitial() { 
-    setLoading(true); 
-    
-    const { data, error } = await supabase 
-    .from("photos") 
-    .select("*") 
-    .order("created_at", { ascending: false }) 
-    .range(0, PAGE_SIZE - 1); 
-    
-    if (!error) { 
-        setItems(data); 
-        setPage(1); // next page starts at 1 
-        setHasMore(data.length === PAGE_SIZE); 
+  async function loadInitial() {
+    setLoading(true);
+
+    const { data, error } = await supabase
+      .from("photos")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .range(0, PAGE_SIZE - 1);
+
+    if (!error) {
+      setItems(data);
+      setPage(1); // next page starts at 1 
+      setHasMore(data.length === PAGE_SIZE);
     }
 
-        setLoading(false); 
+    setLoading(false);
   }
 
   // Function to load more items for infinite scrolling when the user reaches the end of the list
@@ -58,6 +62,7 @@ export default function HomeScreen() { // Main component for the home screen tha
     if (!error) {
       setItems(prev => [...prev, ...data]);
       setPage(prev => prev + 1);
+      setHasMore(data.length === PAGE_SIZE);
     }
     setLoadingMore(false);
   }
@@ -82,16 +87,16 @@ export default function HomeScreen() { // Main component for the home screen tha
 
   // Function to render each item in the FlatList, displaying the image and its metadata in a card layout
   const renderItem = ({ item, index }) => (
-    <View 
-        style={{ 
-            width: cardWidth,
-            marginBottom: 20, 
-            marginRight: index % 2 === 0 ? spacing : 0,
-            backgroundColor: "#fff", 
-            padding: 10, 
-            borderRadius: 10,
-            elevation: 2, 
-        }}>
+    <View
+      style={{
+        width: cardWidth,
+        marginBottom: 20,
+        marginRight: index % 2 === 0 ? spacing : 0,
+        backgroundColor: "#fff",
+        padding: 10,
+        borderRadius: 10,
+        elevation: 2,
+      }}>
       <Image
         source={{ uri: item.image_url }}
         style={{ width: "100%", height: 150, borderRadius: 10 }}

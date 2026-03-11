@@ -1,9 +1,11 @@
+// Needed Imports 
 import { useLocalSearchParams, Stack, useRouter } from "expo-router";
 import { View, Text, Image, StyleSheet, ScrollView, Alert, Pressable, ActivityIndicator } from "react-native";
 import { useEffect, useState } from "react";
 import Screen from "../../components/Screen";
 import { supabase } from "../../lib/supabase";
 
+//Function to get ListingDetails that the user has posted
 export default function ListingDetail() {
     const params = useLocalSearchParams();
     const listingId = Array.isArray(params.id) ? params.id[0] : params.id; //gets id
@@ -33,6 +35,7 @@ export default function ListingDetail() {
         fetchListing();
     }, [numericId]);
 
+    //Function to deal with deleting uploads from your profile and database
     async function handleDelete() {
         Alert.alert("Delete", "Are you sure you want to delete this listing?", [
             { text: "Cancel", style: "cancel" },
@@ -65,6 +68,7 @@ export default function ListingDetail() {
         ]);
     }
 
+    //Deals with if its loading 
     if (loading) {
         return (
             <Screen>
@@ -75,6 +79,7 @@ export default function ListingDetail() {
 
     if (!item) return null;
 
+    //Layout for the page
     return (
         <Screen>
             <Stack.Screen options={{ title: item.title }} />
@@ -104,16 +109,73 @@ export default function ListingDetail() {
     );
 }
 
+// Styles for consistancy
 const styles = StyleSheet.create({
-    center: { flex: 1, justifyContent: "center", alignItems: "center" },
+
+    //Used to center the content
+    center: { 
+        flex: 1, 
+        justifyContent: "center", 
+        alignItems: "center" 
+    },
     scrollContainer: { paddingBottom: 20 },
-    image: { width: "100%", height: 300, borderRadius: 10, marginBottom: 12 },
-    card: { backgroundColor: "#121C0C", borderRadius: 16, padding: 20, margin: 16 },
-    title: { color: "#fff", fontSize: 24, fontWeight: "900", paddingTop: 12 },
-    price: { color: "#CE6674", fontSize: 20, fontWeight: "bold", marginTop: 8 },
-    divider: { height: 1, backgroundColor: "rgba(255,255,255,0.1)", marginVertical: 15 },
-    label: { color: "#A7A7A7", fontSize: 12, fontWeight: "800", textTransform: "uppercase", marginTop: 12 },
-    text: { color: "#fff", fontSize: 16, marginTop: 4 },
-    deleteBtn: { backgroundColor: "#f30678", padding: 15, marginHorizontal: 16, borderRadius: 12, alignItems: "center" },
+    image: { 
+        width: "100%", 
+        height: 300, 
+        borderRadius: 10, 
+        marginBottom: 12 
+    },
+
+    //Container for the listing content
+    card: { 
+        backgroundColor: "#121C0C", 
+        borderRadius: 16, 
+        padding: 20, 
+        margin: 16 
+    },
+
+    title: { 
+        color: "#fff", 
+        fontSize: 24, 
+        fontWeight: "900", 
+        paddingTop: 12 
+    },
+
+    price: { 
+        color: "#CE6674", 
+        fontSize: 20, 
+        fontWeight: "bold", 
+        marginTop: 8 
+    },
+
+    divider: { 
+        height: 1, 
+        backgroundColor: "rgba(255,255,255,0.1)", 
+        marginVertical: 15 
+    },
+
+    label: {
+        color: "#A7A7A7", 
+        fontSize: 12, 
+        fontWeight: "800", 
+        textTransform: "uppercase", 
+        marginTop: 12 
+    },
+
+    text: { 
+        color: "#fff", 
+        fontSize: 16, 
+        marginTop: 4 
+    },
+
+    //Delete button styles
+    deleteBtn: { 
+        backgroundColor: "#f30678", 
+        padding: 15, 
+        marginHorizontal: 16, 
+        borderRadius: 12, 
+        alignItems: "center" 
+    },
+
     buttonText: { color: "#fff", fontWeight: "900" }
 });
