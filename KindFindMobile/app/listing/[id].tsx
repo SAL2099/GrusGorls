@@ -2,8 +2,8 @@
 import { useLocalSearchParams, Stack, useRouter } from "expo-router";
 import { View, Text, Image, StyleSheet, ScrollView, Alert, Pressable, ActivityIndicator } from "react-native";
 import { useEffect, useState } from "react";
-import Screen from "../components/Screen";
-import { supabase } from "../lib/supabase";
+import Screen from "../../components/Screen";
+import { supabase } from "../../lib/supabase";
 
 //Function to get ListingDetails that the user has posted
 export default function ListingDetail() {

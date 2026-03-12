@@ -8,26 +8,42 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view
 import MapView, { Marker } from "react-native-maps"; //MapView (smaller map component)
 import { TouchableOpacity } from "react-native"; // TouchableOpacity component for making elements tappable on mobile devices
 
-import { uploadImage } from "../lib/uploadImage";
-import { supabase } from "../lib/supabase";
-import Screen from "../components/Screen";
-import { fetchOsmShops } from "../lib/osmService";
+import { uploadImage } from "../../lib/uploadImage";
+import { supabase } from "../../lib/supabase";
+import Screen from "../../components/Screen";
+import { fetchOsmShops } from "../../lib/osmService";
+
+type UserLocation = {
+  latitude: number;
+  longitude: number;
+  latitudeDelta: number;
+  longitudeDelta: number;
+};
+
+type Shop = {
+  id: string;
+  name: string;
+  displayName: string;
+  address: string;
+  lat: number;
+  lng: number;
+};
 
 
 
 export default function UploadScreen() { // Main component for the upload screen
-  const [imageUrl, setImageUrl] = useState(null); // State to hold the URL of the uploaded image
+  const [imageUrl, setImageUrl] = useState<string | null>(null); // State to hold the URL of the uploaded image
   const [title, setTitle] = useState(""); // State to hold the title input by the user
   const [description, setDescription] = useState(""); // State to hold the description input by the user
   const [size, setSize] = useState(""); // State to hold the size input by the user
   const [location, setLocation] = useState(""); // State to hold the location input by the user
   const [price, setPrice] = useState("")  // State to hold the price input by the user
 
-  const [shops, setShops] = useState([]);  // State to hold the list of nearby shops fetched from OpenStreetMap
+  const [shops, setShops] = useState<Shop[]>([]);  // State to hold the list of nearby shops fetched from OpenStreetMap
   const [loadingShops, setLoadingShops] = useState(false); // State to indicate whether the app is currently loading nearby shops
 
   const [viewMode, setViewMode] = useState("list"); // "list" or "map"
-  const [userLocation, setUserLocation] = useState(null); // To center the mini-map
+  const [userLocation, setUserLocation] = useState<UserLocation | null>(null); // To center the mini-map
 
   useEffect(() => {
     (async () => {

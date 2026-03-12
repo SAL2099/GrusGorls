@@ -1,8 +1,8 @@
 import React, { useState, useRef } from "react"; // Import necessary hooks from React for managing state and refs
 import {View, Text, TextInput, Pressable, StyleSheet, Alert, Image, ScrollView, KeyboardAvoidingView, Platform,} from "react-native";
 import { router } from "expo-router"; // Import the router from expo-router for navigation between screens
-import Screen from "../components/Screen"; // Import a custom Screen component for consistent styling and layout across screens
-import { supabase } from "../lib/supabase";
+import Screen from "../../components/Screen"; // Import a custom Screen component for consistent styling and layout across screens
+import { supabase } from "../../lib/supabase";
 
 // The LoginScreen component provides a user interface for users to log in to their accounts using email and password authentication
 export default function LoginScreen() {

@@ -13,5 +13,5 @@
     "**/*.tsx",
     ".expo/types/**/*.ts",
     "expo-env.d.ts"
-, "app/components/uploadScreen.js", "app/shared/upload.tsx"  ]
+, "components/uploadScreen.js", "app/shared/upload.tsx"  ]
 }
