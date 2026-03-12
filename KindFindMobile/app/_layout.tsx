@@ -7,7 +7,7 @@ if (!global.btoa) global.btoa = btoa; // If the global btoa function is not defi
 
 import { Stack, useRouter, useSegments } from "expo-router"; // Import Stack for navigation
 import { useEffect, useState } from "react"; // Import useEffect and useState hooks for managing component state and side effects
-import { supabase } from "../lib/supabase"; //Import supabase client
+import { supabase } from "./lib/supabase"; //Import supabase client
 
 //Root layout for all app screens, deals with login logic and route protection.
 export default function RootLayout() { 

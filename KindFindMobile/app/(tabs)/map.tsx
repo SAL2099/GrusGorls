@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react"; // React imports
 import { View, Text, StyleSheet, Modal, Pressable, ActivityIndicator } from "react-native"; // React Native components
 import MapView, { Marker, Region } from "react-native-maps"; // Map components
 import * as Location from "expo-location"; // Expo Location for getting user location
-import Screen from "../../components/Screen"; // Custom Screen component (probably adds padding and background)
+import Screen from "../components/Screen"; // Custom Screen component (probably adds padding and background)
 
 const ABERDEEN_REGION: Region = { // Default region (centered on Aberdeen) if location permission is not granted
   latitude: 57.1497,

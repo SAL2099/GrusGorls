@@ -1,8 +1,8 @@
 import React, { useState, useRef } from "react"; // Import necessary hooks from React for managing state and refs
 import {View, Text, TextInput, Pressable, StyleSheet, Alert, Image, ScrollView, KeyboardAvoidingView, Platform,} from "react-native";
 import { router } from "expo-router"; // Import the router from expo-router for navigation between screens
-import Screen from "../../components/Screen"; // Import a custom Screen component for consistent styling and layout across screens
-import { supabase } from "../../lib/supabase";
+import Screen from "../components/Screen"; // Import a custom Screen component for consistent styling and layout across screens
+import { supabase } from "../lib/supabase";
 
 // The LoginScreen component provides a user interface for users to log in to their accounts using email and password authentication
 export default function LoginScreen() {
@@ -22,10 +22,29 @@ export default function LoginScreen() {
 
         setLoading(true);
         try {
-            const { error } = await supabase.auth.signInWithPassword({ email, password });
+            const { data: authData, error } = await supabase.auth.signInWithPassword({ email, password });
+            
             if (error) throw error;
 
-            router.replace("/(tabs)");
+            const user = authData.user;
+            if (!user) throw new Error("No user returned");
+
+            const {data: profile, error: profileError } = await supabase
+                .from("profiles")
+                .select("role")
+                .eq("id", user.id)
+                .single();
+
+            if (profileError) throw profileError;
+
+            if (profile.role === "store") {
+                router.replace("../(store)");
+            }
+            else {
+                router.replace("../(tabs)");
+            }
+
+
         } catch (e: any) {
             Alert.alert("Login failed", e?.message ?? "Try again");
         } finally {

@@ -7,8 +7,8 @@ if (!global.btoa) global.btoa = btoa; // If the global btoa function is not defi
 
 import { Tabs } from 'expo-router'; //Import tabs conponent from expo for nav
 import { View } from 'react-native'; // Import View components from react-native
-import Header from '../../components/Header'; //Imports header 
-import TabIcon from '../../components/TabIcons'; //Imports logic for icons
+import Header from '../components/Header'; //Imports header 
+import TabIcon from '../components/TabIcons'; //Imports logic for icons
 
 /* This is where things that are common to all the tabs go, like the header and the tab bar. 
 The individual screens are in their own files (index.tsx, map.tsx, profile.tsx, upload.tsx)
@@ -64,7 +64,7 @@ export default function TabLayout() {
         />
 
         <Tabs.Screen
-          name="upload" //Upload page
+          name="shared/upload" //Upload page
           options={{
             tabBarIcon: ({ focused }) => (
               <TabIcon
@@ -77,7 +77,7 @@ export default function TabLayout() {
         />
 
         <Tabs.Screen
-          name="profile" //Profile page
+          name="shared/profile" //Profile page
           options={{
             tabBarIcon: ({ focused }) => (
               <TabIcon

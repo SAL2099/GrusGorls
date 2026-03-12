@@ -1,8 +1,8 @@
 import React, { useState, useRef } from "react"; // Import React and necessary hooks for managing state and refs
 import {View, Text, TextInput, Pressable, StyleSheet, Alert, ScrollView, KeyboardAvoidingView, Platform} from "react-native";
 import { router } from "expo-router"; // Import router for navigation between screens
-import Screen from "../../components/Screen"; // Import custom Screen component for consistent styling and layout
-import { supabase } from "../../lib/supabase"; // Import supabase client for authentication and database interactions
+import Screen from "../components/Screen"; // Import custom Screen component for consistent styling and layout
+import { supabase } from "../lib/supabase"; // Import supabase client for authentication and database interactions
 
 // The SignUpScreen component allows users to create a new account, either as a regular user or a store owner, and handles the sign-up logic
 export default function SignUpScreen() {

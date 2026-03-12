@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, ActivityIndicator, Pressable, TextInput, Alert, Image, FlatList, Dimensions } from "react-native";
-import Screen from "../../components/Screen"; //import custom Screen component for consistent styling and layout
-import { supabase } from "../../lib/supabase"; //Import supabase client for authentication and database interactions
+import Screen from "../components/Screen"; //import custom Screen component for consistent styling and layout
+import { supabase } from "../lib/supabase"; //Import supabase client for authentication and database interactions
 import { useRouter } from "expo-router";
 import { useIsFocused } from "@react-navigation/native";
 

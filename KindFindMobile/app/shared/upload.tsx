@@ -8,11 +8,11 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view
 import MapView, { Marker } from "react-native-maps"; //MapView (smaller map component)
 import { TouchableOpacity } from "react-native"; // TouchableOpacity component for making elements tappable on mobile devices
 
-import { uploadImage } from "../lib/uploadImage"; // Custom function to handle image upload to Supabase Storage
-import { supabase } from "../lib/supabase"; // Supabase client instance for database interactions
-import Screen from "../components/Screen"; // Custom Screen component 
+import { uploadImage } from "../lib/uploadImage";
+import { supabase } from "../lib/supabase";
+import Screen from "../components/Screen";
+import { fetchOsmShops } from "../lib/osmService";
 
-import { fetchOsmShops } from "../lib/osmService"; //Fetch the charity shops
 
 
 export default function UploadScreen() { // Main component for the upload screen
