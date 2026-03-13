@@ -21,7 +21,6 @@ The repository for Gru's Gorls CM3141 coursework
    Scan with the Camera app (iOS)
 
    Or press:
-   a for Android emulator
-   i for iOS simulator (Mac only)
    w for web preview
+
 

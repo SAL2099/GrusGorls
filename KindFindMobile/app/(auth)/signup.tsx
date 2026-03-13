@@ -1,8 +1,11 @@
-import React, { useState, useRef } from "react"; // Import React and necessary hooks for managing state and refs
-import {View, Text, TextInput, Pressable, StyleSheet, Alert, ScrollView, KeyboardAvoidingView, Platform} from "react-native";
+import React, { useState, useRef, useEffect } from "react"; // Import React and necessary hooks for managing state and refs
+import { View, Text, TextInput, Pressable, StyleSheet, Alert, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator } from "react-native";
 import { router } from "expo-router"; // Import router for navigation between screens
 import Screen from "../../components/Screen"; // Import custom Screen component for consistent styling and layout
 import { supabase } from "../../lib/supabase"; // Import supabase client for authentication and database interactions
+import * as Location from "expo-location"; // Import Expo location for getting the user's current location
+import { Dropdown } from "react-native-element-dropdown"; // Dropdown component for selecting nearby shops
+import { fetchOsmShops } from "../../lib/osmService"; // Function to fetch nearby charity shops
 
 // The SignUpScreen component allows users to create a new account, either as a regular user or a store owner, and handles the sign-up logic
 export default function SignUpScreen() {
@@ -15,68 +18,162 @@ export default function SignUpScreen() {
     const [storeName, setStoreName] = useState("");
     const [openingTimes, setOpeningTimes] = useState("");
     const [address, setAddress] = useState("");
+    const [shops, setShops] = useState<any[]>([]);
+    const [loadingShops, setLoadingShops] = useState(false);
+    const [selectedShop, setSelectedShop] = useState("");
 
     const [loading, setLoading] = useState(false);
 
     // Refs for keyboard navigation
     const passwordRef = useRef<TextInput>(null);
     const displayNameRef = useRef<TextInput>(null);
-    const storeNameRef = useRef<TextInput>(null);
-    const openingTimesRef = useRef<TextInput>(null);
-    const addressRef = useRef<TextInput>(null);
+
+    // Load nearby shops when the store role is selected
+    useEffect(() => {
+        async function loadShops() {
+            if (role !== "store") return;
+
+            try {
+                setLoadingShops(true);
+
+                const { status } = await Location.requestForegroundPermissionsAsync();
+                if (status !== "granted") {
+                    Alert.alert("Location needed", "Please allow location access to find your store.");
+                    return;
+                }
+
+
+                const loc = await Location.getCurrentPositionAsync({});
+                const lat = loc.coords.latitude;
+                const lng = loc.coords.longitude;
+
+                const results = await fetchOsmShops(lat, lng, 5000);
+
+                // Get stores already registered
+                const { data: takenStores } = await supabase
+                    .from("profiles")
+                    .select("store_id")
+                    .not("store_id", "is", null);
+
+
+                // Convert taken stores to a list to check for duplicates
+                const takenIds = (takenStores ?? []).map((s) => String(s.store_id));
+
+                const availableShops = (results ?? []).filter(
+                    (shop: any) => !takenIds.includes(String(shop.id))
+                );
+
+                setShops(availableShops);
+
+            } catch (error) {
+                console.log("Failed to fetch nearby shops:", error);
+                Alert.alert("Error", "Could not load nearby shops.");
+            } finally {
+                setLoadingShops(false);
+            }
+        }
+
+        loadShops();
+    }, [role]);
+
+    // Function to handle dropdown selection for a store
+    function handleStoreSelection(item: any) {
+        if (item.value === "manual") {
+            Alert.alert(
+                "Store not listed",
+                "Please contact support to have your store added."
+            );
+            setSelectedShop("");
+            setStoreName("");
+            setAddress("");
+            setOpeningTimes("");
+            return;
+        }
+
+        setSelectedShop(item.value);
+
+        const chosenShop = shops.find((shop) => shop.id === item.value);
+
+        if (chosenShop) {
+            setStoreName(chosenShop.name ?? "");
+            setAddress(chosenShop.address ?? "");
+            setOpeningTimes(chosenShop.opening_hours ?? "");
+        }
+    }
+
+
 
     // Function to handle the sign-up process
     async function signUp() {
-        if (!email || !password) {
-            Alert.alert("Missing info", "Please enter email and password.");
+        // Ensures fields are filled
+        if (!email || !password || !displayName.trim()) {
+            Alert.alert("Missing info", "Please fill in all fields.");
             return;
         }
-        if (!displayName.trim()) {
-            Alert.alert("Missing info", "Please enter a display name.");
-            return;
-        }
-        if (role === "store" && (!storeName.trim() || !openingTimes.trim() || !address.trim())) {
-            Alert.alert("Missing store info", "Please fill in store name, opening times, and address.");
+        if (role === "store" && !selectedShop) {
+            Alert.alert("Store missing", "Please select a store.");
             return;
         }
 
-        // Create the user account with Supabase authentication
         setLoading(true);
+
         try {
-            const { data, error } = await supabase.auth.signUp({ email, password });
-            if (error) throw error;
+            // Check profiles to ensure a store isn't making two accounts
+            if (role === "store") {
+                const { data: existingStore } = await supabase
+                    .from("profiles")
+                    .select("id")
+                    .eq("store_id", String(selectedShop))
+                    .maybeSingle();
 
-            const userId = data.user?.id;
+                if (existingStore) {
+                    setLoading(false);
+                    return Alert.alert("Taken", "This store is already registered.");
+                }
+            }
 
+            // Create authAccount
+            const { data: authData, error: authError } = await supabase.auth.signUp({
+                email,
+                password,
+            });
+
+            if (authError) throw authError;
+            const userId = authData.user?.id;
+
+            // This is turned off for now but the code is here for when we turn on email confirm
             if (!userId) {
-                Alert.alert("Check your email", "Please confirm your email, then log in.");
+                Alert.alert("Verify Email", "Please check your inbox to confirm your account.");
                 router.replace("/(auth)/login");
                 return;
             }
 
-            const profileRow: any = {
+            // Create profile
+            const { error: profileError } = await supabase.from("profiles").insert([{
                 id: userId,
                 role,
                 display_name: displayName.trim(),
+                store_id: role === "store" ? String(selectedShop) : null,
                 store_name: role === "store" ? storeName.trim() : null,
                 opening_times: role === "store" ? openingTimes.trim() : null,
                 address: role === "store" ? address.trim() : null,
-            };
+            }]);
 
-            const { error: profileError } = await supabase.from("profiles").insert([profileRow]);
-            if (profileError) throw profileError;
+            if (profileError) {
+                //Sign them out if another account is registered
+                await supabase.auth.signOut();
 
-            //redirect based on role
-            if (role === "store"){
-                router.replace("/(store)");
+                if (profileError.code === "23505") {
+                    throw new Error("This store was has been registered by another user.");
+                }
+                throw profileError;
             }
-            else {
-                router.replace("/(tabs)");
-            }
 
-            router.replace("/(tabs)");
+            //Only happens if a store signs up
+            router.replace(role === "store" ? "/(store)" : "/(tabs)");
+
         } catch (e: any) {
-            Alert.alert("Sign up failed", e?.message ?? "Something went wrong");
+            Alert.alert("Sign up failed", e?.message ?? "An error occurred");
         } finally {
             setLoading(false);
         }
@@ -100,7 +197,10 @@ export default function SignUpScreen() {
                         <View style={styles.roleRow}>
                             <Pressable
                                 style={[styles.rolePill, role === "user" && styles.rolePillActive]}
-                                onPress={() => setRole("user")}
+                                onPress={() => {
+                                    setRole("user");
+                                    setSelectedShop("");
+                                }}
                             >
                                 <Text style={styles.roleText}>User</Text>
                             </Pressable>
@@ -144,46 +244,38 @@ export default function SignUpScreen() {
                             style={styles.input}
                             value={displayName}
                             onChangeText={setDisplayName}
-                            returnKeyType={role === "store" ? "next" : "done"}
-                            onSubmitEditing={() => {
-                                if (role === "store") storeNameRef.current?.focus();
-                                else signUp();
-                            }}
+                            returnKeyType="done"
+                            onSubmitEditing={signUp}
+
                         />
 
                         {role === "store" && (
                             <>
-                                <TextInput
-                                    ref={storeNameRef}
-                                    placeholder="Store name"
-                                    placeholderTextColor="#A7A7A7"
-                                    style={styles.input}
-                                    value={storeName}
-                                    onChangeText={setStoreName}
-                                    returnKeyType="next"
-                                    onSubmitEditing={() => openingTimesRef.current?.focus()}
-                                />
-
-                                <TextInput
-                                    ref={openingTimesRef}
-                                    placeholder="Opening times (e.g. Mon–Sat 10–5)"
-                                    placeholderTextColor="#A7A7A7"
-                                    style={[styles.input, { height: 80 }]}
-                                    value={openingTimes}
-                                    onChangeText={setOpeningTimes}
-                                    multiline
-                                // Note: multiline inputs handle 'return' as a new line by default
-                                />
-
-                                <TextInput
-                                    ref={addressRef}
-                                    placeholder="Address"
-                                    placeholderTextColor="#A7A7A7"
-                                    style={[styles.input, { height: 80 }]}
-                                    value={address}
-                                    onChangeText={setAddress}
-                                    multiline
-                                />
+                                {loadingShops ? (
+                                    <ActivityIndicator size="small" color="#fff" style={{ marginBottom: 10 }} />
+                                ) : (
+                                    <Dropdown
+                                        style={styles.dropdown}
+                                        placeholderStyle={styles.placeholderStyle}
+                                        selectedTextStyle={styles.selectedTextStyle}
+                                        inputSearchStyle={styles.inputSearchStyle}
+                                        data={[
+                                            ...shops.map((shop) => ({
+                                                label: shop.displayName ?? shop.name ?? "Unnamed shop",
+                                                value: shop.id,
+                                            })),
+                                            { label: "My store isn’t listed", value: "manual" }
+                                        ]}
+                                        search
+                                        maxHeight={300}
+                                        labelField="label"
+                                        valueField="value"
+                                        placeholder="Search or select your store"
+                                        searchPlaceholder="Search for your store..."
+                                        value={selectedShop}
+                                        onChange={handleStoreSelection}
+                                    />
+                                )}
                             </>
                         )}
 
@@ -204,7 +296,7 @@ export default function SignUpScreen() {
 
 // Define styles for the SignUpScreen component using StyleSheet
 const styles = StyleSheet.create({
-   // Style for the scroll view content to allow it to grow and center the form
+    // Style for the scroll view content to allow it to grow and center the form
     scrollContent: {
         flexGrow: 1,
     },
@@ -218,25 +310,25 @@ const styles = StyleSheet.create({
     },
 
     // Style for the title text at the top of the form
-    title: { 
-        color: "#fff", 
-        fontSize: 22, 
-        fontWeight: "900", 
-        marginBottom: 14 
+    title: {
+        color: "#fff",
+        fontSize: 22,
+        fontWeight: "900",
+        marginBottom: 14
     },
 
-    roleRow: { 
-        flexDirection: "row", 
-        gap: 10, 
-        marginBottom: 12 
+    roleRow: {
+        flexDirection: "row",
+        gap: 10,
+        marginBottom: 12
     },
 
-    rolePill: { 
-        flex: 1, 
-        paddingVertical: 10, 
-        borderRadius: 999, 
-        backgroundColor: "rgba(255,255,255,0.12)", 
-        alignItems: "center" 
+    rolePill: {
+        flex: 1,
+        paddingVertical: 10,
+        borderRadius: 999,
+        backgroundColor: "rgba(255,255,255,0.12)",
+        alignItems: "center"
     },
 
     rolePillActive: { backgroundColor: "#CE6674" },
@@ -251,20 +343,47 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
 
-    button: { 
-        marginTop: 6, 
-        backgroundColor: "#f30678", 
-        paddingVertical: 12, 
-        borderRadius: 12, 
-        alignItems: "center" 
+    dropdown: {
+        height: 50,
+        backgroundColor: "#121C0C",
+        borderRadius: 12,
+        paddingHorizontal: 12,
+        marginBottom: 10,
+        borderWidth: 1,
+        borderColor: "rgba(255,255,255,0.12)",
+    },
+
+    placeholderStyle: {
+        fontSize: 16,
+        color: "#A7A7A7",
+    },
+
+    selectedTextStyle: {
+        fontSize: 16,
+        color: "#fff",
+    },
+
+    inputSearchStyle: {
+        height: 40,
+        fontSize: 16,
+        borderRadius: 8,
+        color: "#000",
+        backgroundColor: "#fff",
+    },
+
+    button: {
+        marginTop: 6,
+        backgroundColor: "#f30678",
+        paddingVertical: 12,
+        borderRadius: 12,
+        alignItems: "center"
     },
 
     buttonText: { color: "#fff", fontWeight: "900" },
-    link: { 
-        color: "#fff", 
-        opacity: 0.8, 
-        marginTop: 14, 
-        textAlign: "center" 
+    link: {
+        color: "#fff",
+        opacity: 0.8,
+        marginTop: 14,
+        textAlign: "center"
     },
 });
-
