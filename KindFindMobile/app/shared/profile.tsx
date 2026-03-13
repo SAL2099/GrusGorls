@@ -27,6 +27,10 @@ export default function ProfileScreen() {
   const [openingTimes, setOpeningTimes] = useState("");
   const [address, setAddress] = useState("");
 
+  //Update Password
+  const [newPassword, setNewPassword] = useState("");
+  const [changingPassword, setChangingPassword] = useState(false);
+
   // Function to load the user's profile data from the database
   async function loadProfile() {
     setLoading(true);
@@ -80,7 +84,7 @@ export default function ProfileScreen() {
     if (!profile?.id) return;
 
     if (!displayName.trim()) {
-      Alert.alert("Missing info", "Display name is required.");
+      Alert.alert("Error missing:", "Display name is required.");
       return;
     }
 
@@ -105,6 +109,29 @@ export default function ProfileScreen() {
 
     setEditing(false);
     await loadProfile();
+  }
+
+  //Function to update password
+
+  async function handleUpdatePassword() {
+    if (newPassword.length < 6) {
+      Alert.alert("Invalid Password", "Password must be at least 6 characters.");
+      return;
+    }
+
+    setLoading(true);
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword
+    });
+
+    if (error) {
+      Alert.alert("Error", error.message);
+    } else {
+      Alert.alert("Success", "Password updated successfully!");
+      setNewPassword("");
+      setChangingPassword(false);
+    }
+    setLoading(false);
   }
 
   // Function to log the user out by signing out of their Supabase session
@@ -168,6 +195,49 @@ export default function ProfileScreen() {
               <Pressable style={styles.button} onPress={() => setEditing(true)}>
                 <Text style={styles.buttonText}>Edit profile</Text>
               </Pressable>
+
+              {/* Password Change Section */}
+              {!editing && (
+                <>
+                  {!changingPassword ? (
+                    <Pressable
+                      style={[styles.button]}
+                      onPress={() => setChangingPassword(true)}
+                    >
+                      <Text style={styles.buttonText}>Change Password</Text>
+                    </Pressable>
+                  ) : (
+                    <View style={{ marginTop: 10 }}>
+                      <Text style={styles.label}>New Password</Text>
+                      <TextInput
+                        value={newPassword}
+                        onChangeText={setNewPassword}
+                        style={styles.input}
+                        placeholder="Enter new password"
+                        placeholderTextColor="FFF"
+                        secureTextEntry // Hides the characters
+                      />
+                      <View style={{ flexDirection: 'row', gap: 8 }}>
+                        <Pressable
+                          style={[styles.button, { flex: 1 }]}
+                          onPress={handleUpdatePassword}
+                        >
+                          <Text style={styles.buttonText}>Update</Text>
+                        </Pressable>
+                        <Pressable
+                          style={[styles.button, styles.secondaryBtn, { flex: 1 }]}
+                          onPress={() => {
+                            setChangingPassword(false);
+                            setNewPassword("");
+                          }}
+                        >
+                          <Text style={styles.buttonText}>Cancel</Text>
+                        </Pressable>
+                      </View>
+                    </View>
+                  )}
+                </>
+              )}
 
               <Pressable style={[styles.button, styles.logoutBtn]} onPress={logout}>
                 <Text style={styles.buttonText}>Log out</Text>
