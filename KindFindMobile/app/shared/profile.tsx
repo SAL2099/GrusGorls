@@ -4,6 +4,7 @@ import Screen from "../../components/Screen"; //import custom Screen component f
 import { supabase } from "../../lib/supabase"; //Import supabase client for authentication and database interactions
 import { useRouter } from "expo-router";
 import { useIsFocused } from "@react-navigation/native";
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 
 const screenWidth = Dimensions.get("window").width;
 const horizontalPadding = 32; // container padding: 16 left + 16 right
@@ -20,6 +21,7 @@ export default function ProfileScreen() {
   const [profile, setProfile] = useState<any>(null);
   const [editing, setEditing] = useState(false);
   const [uploads, setUploads] = useState<any[]>([]);
+  const [shopUploads, setShopUploads] = useState<any[]>([]);
 
   // Form state for profile fields
   const [displayName, setDisplayName] = useState("");
@@ -76,8 +78,25 @@ export default function ProfileScreen() {
     } else {
       setUploads(photoData ?? []);
     }
+
+    // Fetch all photos associated with this shop's address
+    // We check against the data object directly rather than a component-wide constant
+    if (data.role === "store" && data.store_name && data.address) {
+      const { data: shopData } = await supabase
+        .from("photos")
+        .select("*")
+        .eq("store_id", data.store_id)
+        .order("created_at", { ascending: false });
+
+
+      setShopUploads(shopData ?? []);
+    } else {
+      setShopUploads([]);
+    }
+
     setLoading(false);
   }
+
 
   // Function to save the updated profile information back to the database
   async function saveProfile() {
@@ -112,7 +131,6 @@ export default function ProfileScreen() {
   }
 
   //Function to update password
-
   async function handleUpdatePassword() {
     if (newPassword.length < 6) {
       Alert.alert("Invalid Password", "Password must be at least 6 characters.");
@@ -133,6 +151,7 @@ export default function ProfileScreen() {
     }
     setLoading(false);
   }
+
 
   // Function to log the user out by signing out of their Supabase session
   async function logout() {
@@ -172,180 +191,233 @@ export default function ProfileScreen() {
   // Render the profile information, and if in edit mode, show input fields to update the profile
   return (
     <Screen>
-      <View style={styles.container}>
-        <Text style={styles.title}>Profile</Text>
+      <KeyboardAwareScrollView
+        contentContainerStyle={styles.scrollContainer}
+        enableOnAndroid={true}
+        extraScrollHeight={20}
+        showsVerticalScrollIndicator={false}
+      >
+        <View style={styles.container}>
+          <Text style={styles.title}>Profile</Text>
 
-        <View style={styles.card}>
-          <Text style={styles.sub}>Account type: {isStore ? "Store" : "User"}</Text>
-
-          {!editing ? (
-            <>
-              <Text style={styles.name}>{profile.display_name}</Text>
-
-              {isStore ? (
-                <>
-                  <Text style={styles.sub}>Store name: {profile.store_name ?? "—"}</Text>
-                  <Text style={styles.sub}>Opening times: {profile.opening_times ?? "—"}</Text>
-                  <Text style={styles.sub}>Address: {profile.address ?? "—"}</Text>
-                </>
-              ) : (
-                <Text style={styles.sub}>Welcome back 💚</Text>
-              )}
-
-              <Pressable style={styles.button} onPress={() => setEditing(true)}>
-                <Text style={styles.buttonText}>Edit profile</Text>
-              </Pressable>
-
-              {/* Password Change Section */}
-              {!editing && (
-                <>
-                  {!changingPassword ? (
-                    <Pressable
-                      style={[styles.button]}
-                      onPress={() => setChangingPassword(true)}
-                    >
-                      <Text style={styles.buttonText}>Change Password</Text>
-                    </Pressable>
-                  ) : (
-                    <View style={{ marginTop: 10 }}>
-                      <Text style={styles.label}>New Password</Text>
-                      <TextInput
-                        value={newPassword}
-                        onChangeText={setNewPassword}
-                        style={styles.input}
-                        placeholder="Enter new password"
-                        placeholderTextColor="FFF"
-                        secureTextEntry // Hides the characters
-                      />
-                      <View style={{ flexDirection: 'row', gap: 8 }}>
-                        <Pressable
-                          style={[styles.button, { flex: 1 }]}
-                          onPress={handleUpdatePassword}
-                        >
-                          <Text style={styles.buttonText}>Update</Text>
-                        </Pressable>
-                        <Pressable
-                          style={[styles.button, styles.secondaryBtn, { flex: 1 }]}
-                          onPress={() => {
-                            setChangingPassword(false);
-                            setNewPassword("");
-                          }}
-                        >
-                          <Text style={styles.buttonText}>Cancel</Text>
-                        </Pressable>
-                      </View>
-                    </View>
-                  )}
-                </>
-              )}
-
-              <Pressable style={[styles.button, styles.logoutBtn]} onPress={logout}>
-                <Text style={styles.buttonText}>Log out</Text>
-              </Pressable>
-            </>
-          ) : (
-            <>
-              <Text style={styles.sectionTitle}>Edit</Text>
-
-              <Text style={styles.label}>Display name</Text>
-              <TextInput
-                value={displayName}
-                onChangeText={setDisplayName}
-                style={styles.input}
-                placeholder="Display name"
-                placeholderTextColor="#A7A7A7"
-              />
-
-              {isStore ? (
-                <>
-                  <Text style={styles.label}>Store name</Text>
-                  <TextInput
-                    value={storeName}
-                    onChangeText={setStoreName}
-                    style={styles.input}
-                    placeholder="Store name"
-                    placeholderTextColor="#A7A7A7"
-                  />
-
-                  <Text style={styles.label}>Opening times</Text>
-                  <TextInput
-                    value={openingTimes}
-                    onChangeText={setOpeningTimes}
-                    style={[styles.input, { height: 80 }]}
-                    placeholder="Mon–Sat 10–5"
-                    placeholderTextColor="#A7A7A7"
-                    multiline
-                  />
-
-                  <Text style={styles.label}>Address</Text>
-                  <TextInput
-                    value={address}
-                    onChangeText={setAddress}
-                    style={[styles.input, { height: 80 }]}
-                    placeholder="Address"
-                    placeholderTextColor="#A7A7A7"
-                    multiline
-                  />
-                </>
-              ) : null}
-
-              <Pressable style={styles.button} onPress={saveProfile}>
-                <Text style={styles.buttonText}>Save</Text>
-              </Pressable>
-
-              <Pressable style={[styles.button, styles.secondaryBtn]} onPress={() => setEditing(false)}>
-                <Text style={styles.buttonText}>Cancel</Text>
-              </Pressable>
-            </>
-          )}
-        </View>
-
-        {/* Show the user's uploads */}
-        {!editing && (
           <View style={styles.card}>
-            <Text style={styles.sectionTitle}>My uploads</Text>
+            <Text style={styles.sub}>Account type: {isStore ? "Store" : "User"}</Text>
+            <Text style={{ color: "white" }}>Store ID: {profile.store_id}</Text>
 
-            {uploads.length === 0 ? (
-              <Text style={styles.sub}>You haven’t uploaded anything yet.</Text>
-            ) : (
-              <FlatList<any>
-                data={uploads}
-                keyExtractor={(item) => item.id.toString()}
-                numColumns={3}
-                scrollEnabled={false}
-                columnWrapperStyle={styles.uploadRow}
-                contentContainerStyle={styles.uploadGrid}
 
-                // When an upload is pressed, navigate to the listing details screen and pass the listing data as params
-                renderItem={({ item }) => (
-                  <Pressable
-                    style={styles.imageWrapper}
-                    onPress={() => {
-                      router.push({
-                        pathname: "/listing/[id]",
-                        params: {
-                          id: item.id,
-                          title: item.title,
-                          image_url: item.image_url,
-                          description: item.description,
-                          price: item.price,
-                          size: item.size,
-                          location: item.location
-                        }
-                      });
-                    }}
-                  >
-                    <Image
-                      source={{ uri: item.image_url }}
-                      style={styles.uploadImage}
-                    />
-                  </Pressable>
+            {!editing ? (
+              <>
+                <Text style={styles.name}>{profile.display_name}</Text>
+
+                {isStore ? (
+                  <>
+                    <Text style={styles.sub}>Store name: {profile.store_name ?? "—"}</Text>
+                    <Text style={styles.sub}>Opening times: {profile.opening_times ?? "—"}</Text>
+                    <Text style={styles.sub}>Address: {profile.address ?? "—"}</Text>
+                  </>
+                ) : (
+                  <Text style={styles.sub}>Welcome back 💚</Text>
                 )}
-              />
+
+                <Pressable style={styles.button} onPress={() => setEditing(true)}>
+                  <Text style={styles.buttonText}>Edit profile</Text>
+                </Pressable>
+
+                {/* Password Change Section */}
+                {!editing && (
+                  <>
+                    {!changingPassword ? (
+                      <Pressable
+                        style={[styles.button]}
+                        onPress={() => setChangingPassword(true)}
+                      >
+                        <Text style={styles.buttonText}>Change Password</Text>
+                      </Pressable>
+                    ) : (
+                      <View style={{ marginTop: 10 }}>
+                        <Text style={styles.label}>New Password</Text>
+                        <TextInput
+                          value={newPassword}
+                          onChangeText={setNewPassword}
+                          style={styles.input}
+                          placeholder="Enter new password"
+                          placeholderTextColor="FFF"
+                          secureTextEntry // Hides the characters
+                        />
+                        <View style={{ flexDirection: 'row', gap: 8 }}>
+                          <Pressable
+                            style={[styles.button, { flex: 1 }]}
+                            onPress={handleUpdatePassword}
+                          >
+                            <Text style={styles.buttonText}>Update</Text>
+                          </Pressable>
+                          <Pressable
+                            style={[styles.button, styles.secondaryBtn, { flex: 1 }]}
+                            onPress={() => {
+                              setChangingPassword(false);
+                              setNewPassword("");
+                            }}
+                          >
+                            <Text style={styles.buttonText}>Cancel</Text>
+                          </Pressable>
+                        </View>
+                      </View>
+                    )}
+                  </>
+                )}
+
+                <Pressable style={[styles.button, styles.logoutBtn]} onPress={logout}>
+                  <Text style={styles.buttonText}>Log out</Text>
+                </Pressable>
+              </>
+            ) : (
+              <>
+                <Text style={styles.sectionTitle}>Edit</Text>
+
+                <Text style={styles.label}>Display name</Text>
+                <TextInput
+                  value={displayName}
+                  onChangeText={setDisplayName}
+                  style={styles.input}
+                  placeholder="Display name"
+                  placeholderTextColor="#A7A7A7"
+                />
+
+                {isStore ? (
+                  <>
+                    <Text style={styles.label}>Store name</Text>
+                    <TextInput
+                      value={storeName}
+                      onChangeText={setStoreName}
+                      style={styles.input}
+                      placeholder="Store name"
+                      placeholderTextColor="#A7A7A7"
+                    />
+
+                    <Text style={styles.label}>Opening times</Text>
+                    <TextInput
+                      value={openingTimes}
+                      onChangeText={setOpeningTimes}
+                      style={[styles.input, { height: 80 }]}
+                      placeholder="Mon–Sat 10–5"
+                      placeholderTextColor="#A7A7A7"
+                      multiline
+                    />
+
+                    <Text style={styles.label}>Address</Text>
+                    <TextInput
+                      value={address}
+                      onChangeText={setAddress}
+                      style={[styles.input, { height: 80 }]}
+                      placeholder="Address"
+                      placeholderTextColor="#A7A7A7"
+                      multiline
+                    />
+                  </>
+                ) : null}
+
+                <Pressable style={styles.button} onPress={saveProfile}>
+                  <Text style={styles.buttonText}>Save</Text>
+                </Pressable>
+
+                <Pressable style={[styles.button, styles.secondaryBtn]} onPress={() => setEditing(false)}>
+                  <Text style={styles.buttonText}>Cancel</Text>
+                </Pressable>
+              </>
             )}
           </View>
+
+          {/* Show the user's uploads */}
+          {!editing && (
+            <View style={styles.card}>
+              <Text style={styles.sectionTitle}>My uploads</Text>
+
+              {uploads.length === 0 ? (
+                <Text style={styles.sub}>You haven’t uploaded anything yet.</Text>
+              ) : (
+                <FlatList<any>
+                  data={uploads}
+                  keyExtractor={(item) => item.id.toString()}
+                  numColumns={3}
+                  scrollEnabled={false}
+                  columnWrapperStyle={styles.uploadRow}
+                  contentContainerStyle={styles.uploadGrid}
+
+                  // When an upload is pressed, navigate to the listing details screen and pass the listing data as params
+                  renderItem={({ item }) => (
+                    <Pressable
+                      style={styles.imageWrapper}
+                      onPress={() => {
+                        router.push({
+                          pathname: "/listing/[id]",
+                          params: {
+                            id: item.id,
+                            title: item.title,
+                            image_url: item.image_url,
+                            description: item.description,
+                            price: item.price,
+                            size: item.size,
+                            location: item.location
+                          }
+                        });
+                      }}
+                    >
+                      <Image
+                        source={{ uri: item.image_url }}
+                        style={styles.uploadImage}
+                      />
+                    </Pressable>
+                  )}
+                />
+              )}
+            </View>
+          )}
+
+          {/* Show shop-wide uploads if the user is a store */}
+{isStore && !editing && (
+  <View style={styles.card}>
+    <Text style={styles.sectionTitle}>Store Gallery</Text>
+
+    {shopUploads.length === 0 ? (
+      <Text style={styles.sub}>No items uploaded to this location yet.</Text>
+    ) : (
+      <FlatList<any>
+        data={shopUploads}
+        keyExtractor={(item) => item.id.toString()}
+        numColumns={3}
+        scrollEnabled={false}
+        columnWrapperStyle={styles.uploadRow}
+        contentContainerStyle={styles.uploadGrid}
+        renderItem={({ item }) => (
+          <Pressable
+            style={styles.imageWrapper}
+            onPress={() => {
+              router.push({
+                pathname: "/listing/[id]",
+                params: {
+                  id: item.id,
+                  title: item.title,
+                  image_url: item.image_url,
+                  description: item.description,
+                  price: item.price,
+                  size: item.size,
+                  location: item.location
+                }
+              });
+            }}
+          >
+            <Image
+              source={{ uri: item.image_url }}
+              style={styles.uploadImage}
+            />
+          </Pressable>
         )}
-      </View>
+      />
+    )}
+  </View>
+          )}
+        </View>
+      </KeyboardAwareScrollView>
     </Screen>
   );
 }
@@ -354,7 +426,6 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   // Container style for the whole screen
   container: {
-    flex: 1,
     padding: 16,
     gap: 16
   },
@@ -452,6 +523,11 @@ const styles = StyleSheet.create({
   uploadImage: {
     width: "100%",
     height: "100%",
+  },
+
+  //Makes the page scrollable 
+  scrollContainer: {
+    paddingBottom: 20, // Adds space at the bottom so you can click the next field
   },
 });
 

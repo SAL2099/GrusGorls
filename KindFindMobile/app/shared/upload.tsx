@@ -31,107 +31,128 @@ type Shop = {
 
 
 
-export default function UploadScreen() { // Main component for the upload screen
-  const [imageUrl, setImageUrl] = useState<string | null>(null); // State to hold the URL of the uploaded image
-  const [title, setTitle] = useState(""); // State to hold the title input by the user
-  const [description, setDescription] = useState(""); // State to hold the description input by the user
-  const [size, setSize] = useState(""); // State to hold the size input by the user
-  const [location, setLocation] = useState(""); // State to hold the location input by the user
-  const [price, setPrice] = useState("")  // State to hold the price input by the user
+export default function UploadScreen() {
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [size, setSize] = useState("");
+  const [location, setLocation] = useState("");
+  const [price, setPrice] = useState("");
 
-  const [shops, setShops] = useState<Shop[]>([]);  // State to hold the list of nearby shops fetched from OpenStreetMap
-  const [loadingShops, setLoadingShops] = useState(false); // State to indicate whether the app is currently loading nearby shops
-
-  const [viewMode, setViewMode] = useState("list"); // "list" or "map"
-  const [userLocation, setUserLocation] = useState<UserLocation | null>(null); // To center the mini-map
+  const [shops, setShops] = useState<Shop[]>([]);
+  const [loadingShops, setLoadingShops] = useState(false);
+  const [viewMode, setViewMode] = useState("list");
+  const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
+  const [userProfile, setUserProfile] = useState<any>(null);
 
   useEffect(() => {
     (async () => {
+      //Get the current user profile from Supabase
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", user.id)
+          .single();
+        setUserProfile(profile);
+      }
+
+      //Load location and shops
       try {
         setLoadingShops(true);
-        //Asks for location permission, gets GPS coordinates, and fetches nearby shops from OpenStreetMap using the Overpass API
         const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== "granted") {
-          setLoadingShops(false);
-          return;
+        if (status === "granted") {
+          const loc = await Location.getCurrentPositionAsync({});
+          const lat = loc.coords.latitude;
+          const lng = loc.coords.longitude;
+
+          setUserLocation({
+            latitude: lat,
+            longitude: lng,
+            latitudeDelta: 0.01,
+            longitudeDelta: 0.01,
+          });
+
+          const results = await fetchOsmShops(lat, lng, 5000);
+          setShops(results);
         }
-
-        // Get current location coordinates
-        const loc = await Location.getCurrentPositionAsync({});
-        const lat = loc.coords.latitude;
-        const lng = loc.coords.longitude;
-
-        // Fetch nearby shops using the coordinates and a radius of 5000 meters (5 km)
-        const results = await fetchOsmShops(lat, lng, 5000);
-        setShops(results);
       } catch (error) {
         console.log("Failed to fetch nearby shops:", error);
       } finally {
         setLoadingShops(false);
       }
-
-      const loc = await Location.getCurrentPositionAsync({});
-      setUserLocation({
-        latitude: loc.coords.latitude,
-        longitude: loc.coords.longitude,
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01,
-      });
     })();
   }, []);
 
-  const pickAndUpload = async () => { // Function to handle image picking and uploading
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync(); // Request permission to access the media library
-    if (!permission.granted) { //Request permission to access the media library
+  const pickAndUpload = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
       alert("Permission to access photos is required!");
       return;
     }
 
-    const result = await ImagePicker.launchImageLibraryAsync({ // Open the image picker
+    const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
       quality: 1,
     });
 
-    if (!result.canceled) { // If the user picked an image, upload it and get the URL
+    if (!result.canceled) {
       const uri = result.assets[0].uri;
       const url = await uploadImage(uri);
-      setImageUrl(url); 
-      console.log("SET IMAGE URL:", url);
+      setImageUrl(url);
     }
   };
 
-  const saveMetadata = async () => { // Function to save the image metadata to the Supabase database
-
+  const saveMetadata = async () => {
     const { data: userData } = await supabase.auth.getUser();
     const userId = userData?.user?.id;
 
-    if (!userId) { // If the user is not logged in, alert them and return early
-      alert("Please log in first");
+    //Forces users to fill all feilds (backup for button Fail)
+    if (!imageUrl || !title.trim() || !description.trim() || !size.trim() || !price.trim()) {
+      alert("Please fill in all fields and select an image.");
       return;
     }
 
-    let locationToSave = location; // By default, save the location as is (this will be "Other" or a shop ID) makes it readable in the database, we want to convert shop IDs to their names before saving
-      if (location !== "Other") {
-        const selectedShop = shops.find(s => s.id === location);
-        if (selectedShop) {
-          locationToSave = `${selectedShop.name} - ${selectedShop.address}`; // Convert the selected shop ID to its name for easier readability in the database
-        }
+    //Force to store info if user is a store
+    let locationToSave = location;
+    if (userProfile?.role === "store") {
+      locationToSave = `${userProfile.store_name} - ${userProfile.address}`;
+    } else if (location !== "Other") {
+      const selectedShop = shops.find(s => s.id === location);
+      if (selectedShop) {
+        locationToSave = `${selectedShop.name} - ${selectedShop.address}`;
       }
+    }
 
-    const { error } = await supabase.from("photos").insert([ // Insert a new record into the "photos" table with the image URL and metadata
+    let storeIdToSave = null;
+
+    if (userProfile?.role === "store") {
+      storeIdToSave = userProfile.store_id;
+    } else if (location !== "Other") {
+      const selectedShop = shops.find(s => s.id === location);
+      if (selectedShop) {
+        locationToSave = `${selectedShop.name} - ${selectedShop.address}`;
+        storeIdToSave = String(selectedShop.id);
+      }
+    }
+
+
+    const { error } = await supabase.from("photos").insert([
       {
         user_id: userId,
         image_url: imageUrl,
         title,
         description,
         size,
-        location: locationToSave, // Convert location ID to a readable string before saving
+        location: locationToSave,
         price,
+        store_id: storeIdToSave,
       },
     ]);
 
-    if (error) { // If there's an error, log it and alert the user
+    if (error) {
       console.log("DB ERROR:", error);
       alert("Failed to save info");
     } else {
@@ -145,126 +166,88 @@ export default function UploadScreen() { // Main component for the upload screen
     }
   };
 
-  return ( // Render the UI for the upload screen
+  const isFormValid =
+    imageUrl !== null &&
+    title.trim().length > 0 &&
+    description.trim().length > 0 &&
+    size.trim().length > 0 &&
+    price.trim().length > 0 &&
+    (userProfile?.role === "store" || location.length > 0);
+
+  return (
     <Screen>
       <View style={styles.container}>
         <Text style={styles.title}>Upload an Image</Text>
-
         <Button title="Pick Image" onPress={pickAndUpload} />
 
-        {/* Render the image and metadata inputs if an image URL is available */}
         {imageUrl && (
-          <>
-            <KeyboardAwareScrollView
-              contentContainerStyle={{ flexGrow: 1, padding: 20 }}
-              enableOnAndroid={true}
+          <KeyboardAwareScrollView contentContainerStyle={{ flexGrow: 1, padding: 20 }} enableOnAndroid={true}>
+            <View style={{ alignItems: 'center' }}>
+              <Image source={{ uri: imageUrl }} style={styles.image} />
+            </View>
+
+            <TextInput placeholder="Title" value={title} onChangeText={setTitle} style={styles.input} />
+            <TextInput placeholder="Description" value={description} onChangeText={setDescription} style={styles.input} />
+            <TextInput placeholder="Size" value={size} onChangeText={setSize} style={styles.input} />
+
+            {/* Only show location selection for regular users */}
+            {userProfile?.role !== "store" ? (
+              <>
+                <View style={styles.toggleContainer}>
+                  <TouchableOpacity style={[styles.toggleBtn, viewMode === 'list' && styles.toggleBtnActive]} onPress={() => setViewMode('list')}>
+                    <Text style={styles.toggleText}>List</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity style={[styles.toggleBtn, viewMode === 'map' && styles.toggleBtnActive]} onPress={() => setViewMode('map')}>
+                    <Text style={styles.toggleText}>Map</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.selectionArea}>
+                  {loadingShops ? <ActivityIndicator size="small" color="#FFF" /> : viewMode === 'list' ? (
+                    <Dropdown
+                      style={styles.dropdown}
+                      placeholderStyle={styles.placeholderStyle}
+                      selectedTextStyle={styles.selectedTextStyle}
+                      data={[...shops.map(shop => ({ label: shop.displayName, value: shop.id })), { label: "Other", value: "Other" }]}
+                      value={location}
+                      labelField="label"
+                      valueField="value"
+                      onChange={item => setLocation(item.value)}
+                    />
+                  ) : (
+                    <View style={styles.miniMapWrapper}>
+                      {userLocation && (
+                        <MapView style={styles.miniMap} initialRegion={userLocation} showsUserLocation={true}>
+                          {shops.map((shop) => (
+                            <Marker key={shop.id} coordinate={{ latitude: shop.lat, longitude: shop.lng }} title={shop.name} pinColor={location === shop.id ? "green" : "red"} onPress={() => setLocation(shop.id)} />
+                          ))}
+                        </MapView>
+                      )}
+                      <Text style={styles.selectedMapText}>{location ? `Selected: ${location}` : "Tap a pin to select"}</Text>
+                    </View>
+                  )}
+                </View>
+              </>
+            ) : (
+              <View style={[styles.input, { backgroundColor: '#f0f0f0' }]}>
+                <Text>Posting as: {userProfile.store_name}</Text>
+              </View>
+            )}
+
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Text style={{ fontSize: 15, color: "#FFF" }}>£</Text>
+              <TextInput placeholder="Price" value={price} onChangeText={setPrice} style={styles.price} />
+            </View>
+
+            {/* Changed to a Touchable instead of button for style*/}
+            <TouchableOpacity
+              onPress={saveMetadata}
+              disabled={!isFormValid}
+              style={{ backgroundColor: isFormValid ? "#CE6674" : "#555", padding: 15, borderRadius: 8 }}
             >
-
-              <View style={{ alignItems: 'center' }}>
-                <Image source={{ uri: imageUrl }} style={styles.image} />
-              </View>
-
-              <TextInput
-                placeholder="Title"
-                value={title}
-                onChangeText={setTitle}
-                style={styles.input}
-              />
-
-              <TextInput
-                placeholder="Description"
-                value={description}
-                onChangeText={setDescription}
-                style={styles.input}
-              />
-
-              <TextInput
-                placeholder="Size"
-                value={size}
-                onChangeText={setSize}
-                style={styles.input}
-              />
-
-              {/* Toggle Buttons for Map/List View*/}
-              <View style={styles.toggleContainer}>
-
-                <TouchableOpacity
-                  style={[styles.toggleBtn, viewMode === 'list' && styles.toggleBtnActive]}
-                  onPress={() => setViewMode('list')}
-                >
-                  <Text style={styles.toggleText}>List</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[styles.toggleBtn, viewMode === 'map' && styles.toggleBtnActive]}
-                  onPress={() => setViewMode('map')}
-                >
-                  <Text style={styles.toggleText}>Map</Text>
-                </TouchableOpacity>
-              </View>
-
-              {/* Location Selection */}
-              <View style={styles.selectionArea}>
-                {loadingShops ? (
-                  <ActivityIndicator size="small" color="#FFF" />
-                ) : viewMode === 'list' ? (
-                  <Dropdown
-                    style={styles.dropdown}
-                    placeholderStyle={styles.placeholderStyle}
-                    selectedTextStyle={styles.selectedTextStyle}
-                    data={[
-                      ...shops.map(shop => ({ label: shop.displayName, value: shop.id })),
-                      { label: "Other", value: "Other" }
-                    ]}
-                    value={location}
-                    labelField="label"
-                    valueField="value"
-                    onChange={item => setLocation(item.value)}
-                  />
-                ) : (
-                  <View style={styles.miniMapWrapper}>
-                    {/* Ensure userLocation is loaded before rendering MapView */}
-                    {userLocation && (
-                      <MapView
-                        key={location}
-                        style={styles.miniMap}
-                        initialRegion={userLocation}
-                        showsUserLocation={true}
-                      >
-                        {shops.map((shop) => (
-                          <Marker
-                            key={shop.id}
-                            coordinate={{ latitude: shop.lat, longitude: shop.lng }}
-                            title={shop.name}
-                            pinColor={location === shop.id ? "green" : "red"} // Highlight selected shop in green
-                            onPress={() => setLocation(shop.id)}
-                          />
-                        ))}
-                      </MapView>
-                    )}
-                    <Text style={styles.selectedMapText}>
-                      {location 
-                        ? `Selected: ${shops.find(s => s.id === location)?.displayName || location}` 
-                        : "Tap a pin to select"}
-                    </Text>
-                  </View>
-                )}
-              </View>
-
-              {/* Price Input */}
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Text style={{ fontSize: 15, color: "#FFF" }}>£</Text>
-                <TextInput
-                  placeholder="Price"
-                  value={price}
-                  onChangeText={setPrice}
-                  style={styles.price}
-                />
-              </View>
-
-              <Button title="Save Info" onPress={saveMetadata} />
-            </KeyboardAwareScrollView>
-          </>
+              <Text style={{ color: "white", textAlign: "center" }}>Save Info</Text>
+            </TouchableOpacity>
+          </KeyboardAwareScrollView>
         )}
       </View>
     </Screen>
@@ -362,7 +345,7 @@ const styles = StyleSheet.create({
   miniMap: {
     flex: 1,
   },
-  
+
   selectedMapText: {
     backgroundColor: 'rgba(0,0,0,0.7)',
     color: '#FFF',

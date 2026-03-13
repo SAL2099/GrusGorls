@@ -55,7 +55,6 @@ export default function ListingDetail() {
                         .from("photos")
                         .delete()
                         .eq("id", numericId)
-                        .eq("user_id", user.id);
 
                     if (error) {
                         console.log("DELETE ERROR:", error);
