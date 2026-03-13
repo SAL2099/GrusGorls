@@ -82,8 +82,20 @@ export default function ListingDetail() {
     //Layout for the page
     return (
         <Screen>
-            <Stack.Screen options={{ title: item.title }} />
+            <Stack.Screen
+                options={{
+                    title: item.title,
+                    headerShown: false  
+                }}
+            />
             <ScrollView contentContainerStyle={styles.scrollContainer}>
+                <Pressable style={styles.backBtn} onPress={() => router.back()}>
+                    <Image 
+                            source={require('../../assets/images/Back Arrow.png')}  //Replace with Logo2 or Logo3 if you want to test those
+                            style={styles.backBtnImage} 
+                    />
+                </Pressable>
+                
                 <View style={styles.card}>
                     <Image source={{ uri: item.image_url }} style={styles.image} />
                     <Text style={styles.title}>{item.title}</Text>
@@ -113,69 +125,83 @@ export default function ListingDetail() {
 const styles = StyleSheet.create({
 
     //Used to center the content
-    center: { 
-        flex: 1, 
-        justifyContent: "center", 
-        alignItems: "center" 
+    center: {
+        flex: 1,
+        justifyContent: "center",
+        alignItems: "center"
     },
     scrollContainer: { paddingBottom: 20 },
-    image: { 
-        width: "100%", 
-        height: 300, 
-        borderRadius: 10, 
-        marginBottom: 12 
+    image: {
+        width: "100%",
+        height: 300,
+        borderRadius: 10,
+        marginBottom: 12
     },
 
     //Container for the listing content
-    card: { 
-        backgroundColor: "#121C0C", 
-        borderRadius: 16, 
-        padding: 20, 
-        margin: 16 
+    card: {
+        backgroundColor: "#121C0C",
+        borderRadius: 16,
+        padding: 20,
+        margin: 5
     },
 
-    title: { 
-        color: "#fff", 
-        fontSize: 24, 
-        fontWeight: "900", 
-        paddingTop: 12 
+    title: {
+        color: "#fff",
+        fontSize: 24,
+        fontWeight: "900",
+        paddingTop: 12
     },
 
-    price: { 
-        color: "#CE6674", 
-        fontSize: 20, 
-        fontWeight: "bold", 
-        marginTop: 8 
+    price: {
+        color: "#CE6674",
+        fontSize: 20,
+        fontWeight: "bold",
+        marginTop: 8
     },
 
-    divider: { 
-        height: 1, 
-        backgroundColor: "rgba(255,255,255,0.1)", 
-        marginVertical: 15 
+    divider: {
+        height: 1,
+        backgroundColor: "rgba(255,255,255,0.1)",
+        marginVertical: 15
     },
 
     label: {
-        color: "#A7A7A7", 
-        fontSize: 12, 
-        fontWeight: "800", 
-        textTransform: "uppercase", 
-        marginTop: 12 
+        color: "#A7A7A7",
+        fontSize: 12,
+        fontWeight: "800",
+        textTransform: "uppercase",
+        marginTop: 12
     },
 
-    text: { 
-        color: "#fff", 
-        fontSize: 16, 
-        marginTop: 4 
+    text: {
+        color: "#fff",
+        fontSize: 16,
+        marginTop: 4
     },
 
     //Delete button styles
-    deleteBtn: { 
-        backgroundColor: "#f30678", 
-        padding: 15, 
-        marginHorizontal: 16, 
-        borderRadius: 12, 
-        alignItems: "center" 
+    deleteBtn: {
+        backgroundColor: "#f30678",
+        padding: 15,
+        marginHorizontal: 16,
+        borderRadius: 12,
+        alignItems: "center"
     },
 
+    backBtn: {
+        backgroundColor: "#CE6674",
+        padding: 15,
+        marginHorizontal: 16,
+        marginTop: 40,
+        borderRadius: 12,
+        alignItems: "center",
+        width: 50,
+    },
+
+    backBtnImage: {
+        width: 20,
+        height:20,
+    },
     buttonText: { color: "#fff", fontWeight: "900" }
 });
