@@ -202,7 +202,6 @@ export default function ProfileScreen() {
 
           <View style={styles.card}>
             <Text style={styles.sub}>Account type: {isStore ? "Store" : "User"}</Text>
-            <Text style={{ color: "white" }}>Store ID: {profile.store_id}</Text>
 
 
             {!editing ? (
