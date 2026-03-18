@@ -373,47 +373,47 @@ export default function ProfileScreen() {
           )}
 
           {/* Show shop-wide uploads if the user is a store */}
-{isStore && !editing && (
-  <View style={styles.card}>
-    <Text style={styles.sectionTitle}>Store Gallery</Text>
+          {isStore && !editing && (
+            <View style={styles.card}>
+              <Text style={styles.sectionTitle}>Store Gallery</Text>
 
-    {shopUploads.length === 0 ? (
-      <Text style={styles.sub}>No items uploaded to this location yet.</Text>
-    ) : (
-      <FlatList<any>
-        data={shopUploads}
-        keyExtractor={(item) => item.id.toString()}
-        numColumns={3}
-        scrollEnabled={false}
-        columnWrapperStyle={styles.uploadRow}
-        contentContainerStyle={styles.uploadGrid}
-        renderItem={({ item }) => (
-          <Pressable
-            style={styles.imageWrapper}
-            onPress={() => {
-              router.push({
-                pathname: "/listing/[id]",
-                params: {
-                  id: item.id,
-                  title: item.title,
-                  image_url: item.image_url,
-                  tags: item.tags,
-                  price: item.price,
-                  size: item.size,
-                  location: item.location
-                }
-              });
-            }}
-          >
-            <Image
-              source={{ uri: item.image_url }}
-              style={styles.uploadImage}
-            />
-          </Pressable>
-        )}
-      />
-    )}
-  </View>
+              {shopUploads.length === 0 ? (
+                <Text style={styles.sub}>No items uploaded to this location yet.</Text>
+              ) : (
+                <FlatList<any>
+                  data={shopUploads}
+                  keyExtractor={(item) => item.id.toString()}
+                  numColumns={3}
+                  scrollEnabled={false}
+                  columnWrapperStyle={styles.uploadRow}
+                  contentContainerStyle={styles.uploadGrid}
+                  renderItem={({ item }) => (
+                    <Pressable
+                      style={styles.imageWrapper}
+                      onPress={() => {
+                        router.push({
+                          pathname: "/listing/[id]",
+                          params: {
+                            id: item.id,
+                            title: item.title,
+                            image_url: item.image_url,
+                            tags: item.tags,
+                            price: item.price,
+                            size: item.size,
+                            location: item.location
+                          }
+                        });
+                      }}
+                    >
+                      <Image
+                        source={{ uri: item.image_url }}
+                        style={styles.uploadImage}
+                      />
+                    </Pressable>
+                  )}
+                />
+              )}
+            </View>
           )}
         </View>
       </KeyboardAwareScrollView>

@@ -237,6 +237,10 @@ export default function UploadScreen() {
               </Text>
             </Pressable>
 
+            <Text style={styles.tagHelperText}>
+              {selectedTags.length}/5 selected
+            </Text>
+
             {showTags && (
               <View style={styles.tagsPanel}>
                 {Object.entries(tagCategories).map(([category, tags]) => (

@@ -1,7 +1,8 @@
 import { useEffect, useState, useCallback } from "react";
 import { useIsFocused } from "@react-navigation/native";
-import { View, Text, Image, FlatList, ActivityIndicator, Dimensions, TextInput, StyleSheet } from "react-native"; // Import UI components from React Native
-import { supabase } from "../lib/supabase"; // adjust path if needed
+import { View, Text, Image, FlatList, ActivityIndicator, Dimensions, TextInput, StyleSheet, Pressable } from "react-native"; // Import UI components from React Native
+import { supabase } from "../lib/supabase";
+import { Ionicons } from "@expo/vector-icons"; //Icon
 
 export default function HomeScreen() { // Main component for the home screen that displays a feed of uploaded items
   const isFocused = useIsFocused();
@@ -112,27 +113,62 @@ export default function HomeScreen() { // Main component for the home screen tha
   // Function to render each item in the FlatList, displaying the image and its metadata in a card layout
   const renderItem = ({ item, index }) => (
     <View
-      style={{
-        width: cardWidth,
-        marginBottom: 20,
-        marginRight: index % 2 === 0 ? spacing : 0,
-        backgroundColor: "#fff",
-        padding: 10,
-        borderRadius: 10,
-        elevation: 2,
-      }}>
+      style={[
+        styles.card,
+        {
+          width: cardWidth,
+          marginRight: index % 2 === 0 ? spacing : 0,
+        },
+      ]}
+    >
       <Image
         source={{ uri: item.image_url }}
-        style={{ width: "100%", height: 150, borderRadius: 10 }}
+        style={styles.cardImage}
         resizeMode="cover"
       />
-      <Text style={{ fontSize: 18, fontWeight: "bold", marginTop: 10 }}>{item.title}</Text>
-      <Text style={{ marginTop: 5, color: "#555" }}>{item.tags?.join(" • ")}</Text>
-      <Text style={{ marginTop: 5, color: "#555" }}>Size : {item.size}</Text>
-      <Text style={{ marginTop: 5, color: "#555" }}>{item.location}</Text>
-      <Text style={{ marginTop: 5, color: "#555" }}>£{item.price}</Text>
-      <Text style={{ marginTop: 5, fontSize: 12, color: "#888" }}>
-        {new Date(item.created_at).toLocaleString()}
+
+      <Text style={styles.cardTitle} numberOfLines={1}>
+        {item.title}
+      </Text>
+
+      <View style={styles.tagRow}>
+        {item.tags?.slice(0, 3).map((tag, index) => {
+          const isActive = searchQuery.toLowerCase() === tag.toLowerCase();
+
+          return (
+            <Pressable
+              key={index}
+              style={[
+                styles.tagChip,
+                isActive && styles.tagChipActive
+              ]}
+              onPress={() =>
+                setSearchQuery((prev) =>
+                  prev.toLowerCase() === tag.toLowerCase() ? "" : tag
+                )
+              }
+            >
+              <Text
+                style={[
+                  styles.tagChipText,
+                  isActive && styles.tagChipTextActive
+                ]}
+              >
+                {tag}
+              </Text>
+            </Pressable>
+          );
+        })}
+      </View>
+
+      <Text style={styles.cardPrice}>£{item.price}</Text>
+
+      <Text style={styles.cardMeta} numberOfLines={1}>
+        Size: {item.size}
+      </Text>
+
+      <Text style={styles.cardMeta} numberOfLines={1}>
+        {item.location}
       </Text>
     </View>
   );
@@ -146,6 +182,7 @@ export default function HomeScreen() { // Main component for the home screen tha
   return (
     <View style={styles.container}>
       <View style={styles.searchWrapper}>
+        <Ionicons name="search" size={18} color="#888" style={styles.searchIcon} />
         <TextInput
           style={styles.searchBar}
           placeholder="Search by title, tag, size, or location"
@@ -160,6 +197,7 @@ export default function HomeScreen() { // Main component for the home screen tha
         keyExtractor={(item) => item.id.toString()}
         renderItem={renderItem}
         numColumns={2}
+        contentContainerStyle={{ paddingBottom: 20 }}
         columnWrapperStyle={{}}
         refreshing={refreshing}
         onRefresh={onRefresh}
@@ -180,19 +218,92 @@ export default function HomeScreen() { // Main component for the home screen tha
 }
 
 const styles = StyleSheet.create({
-searchWrapper: {
+  //Search bar
+  searchWrapper: {
     width: "100%",
     alignSelf: "stretch",
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    marginBottom: 12,
+    elevation: 2,
+  },
+
+  searchIcon: {
+    marginRight: 8,
   },
 
   searchBar: {
-    width: "100%",
-    alignSelf: "stretch",
-    backgroundColor: "#fff",
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    marginBottom: 10,
+    flex: 1,
+    paddingVertical: 12,
+    color: "#000",
+  },
+
+  //Polaroid photos 
+  card: {
+    backgroundColor: "#FFF",
+    borderRadius: 14,
+    padding: 10,
+    marginBottom: 16,
     elevation: 2,
+  },
+
+  cardImage: {
+    width: "100%",
+    height: 170,
+    borderRadius: 10,
+  },
+
+  cardTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    marginTop: 10,
+    color: "#111",
+  },
+
+  cardPrice: {
+    marginTop: 8,
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#111",
+  },
+
+  cardMeta: {
+    marginTop: 4,
+    color: "#777",
+    fontSize: 12,
+  },
+
+  //tags 
+  tagRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginTop: 6,
+    gap: 6,
+  },
+
+  tagChip: {
+    backgroundColor: "#fff",
+    borderRadius: 20,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderWidth: 1.5,
+    borderColor: "#CE6674",
+  },
+
+  tagChipText: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: "#CE6674",
+  },
+
+  tagChipActive: {
+    backgroundColor: "#CE6674",
+  },
+
+  tagChipTextActive: {
+    color: "#fff",
   },
 });

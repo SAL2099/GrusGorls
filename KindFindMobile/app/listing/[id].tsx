@@ -84,17 +84,17 @@ export default function ListingDetail() {
             <Stack.Screen
                 options={{
                     title: item.title,
-                    headerShown: false  
+                    headerShown: false
                 }}
             />
             <ScrollView contentContainerStyle={styles.scrollContainer}>
                 <Pressable style={styles.backBtn} onPress={() => router.back()}>
-                    <Image 
-                            source={require('../../assets/images/Back Arrow.png')}  //Replace with Logo2 or Logo3 if you want to test those
-                            style={styles.backBtnImage} 
+                    <Image
+                        source={require('../../assets/images/Back Arrow.png')}  //Replace with Logo2 or Logo3 if you want to test those
+                        style={styles.backBtnImage}
                     />
                 </Pressable>
-                
+
                 <View style={styles.card}>
                     <Image source={{ uri: item.image_url }} style={styles.image} />
                     <Text style={styles.title}>{item.title}</Text>
@@ -103,7 +103,13 @@ export default function ListingDetail() {
                     <View style={styles.divider} />
 
                     <Text style={styles.label}>Tags</Text>
-                    <Text style={styles.text}>{item.tags?.join(" • ")}</Text>
+                    <View style={styles.tagRow}>
+                        {item.tags?.map((tag:any, index:any) => (
+                            <View key={index} style={styles.tagChip}>
+                                <Text style={styles.tagChipText}>{tag}</Text>
+                            </View>
+                        ))}
+                    </View>
 
                     <Text style={styles.label}>Size</Text>
                     <Text style={styles.text}>{item.size || "N/A"}</Text>
@@ -200,7 +206,30 @@ const styles = StyleSheet.create({
 
     backBtnImage: {
         width: 20,
-        height:20,
+        height: 20,
     },
-    buttonText: { color: "#fff", fontWeight: "900" }
+
+    buttonText: { color: "#fff", fontWeight: "900" },
+
+    //tags 
+    tagRow: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        marginTop: 8,
+        gap: 8,
+    },
+
+    tagChip: {
+        borderRadius: 20,
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderWidth: 1.5,
+        borderColor: "#CE6674",
+    },
+
+    tagChipText: {
+        fontSize: 11,
+        fontWeight: "600",
+        color: "#CE6674",
+    },
 });
