@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { useIsFocused } from "@react-navigation/native";
-import { View, Text, Image, FlatList, ActivityIndicator, Dimensions } from "react-native"; // Import UI components from React Native
+import { View, Text, Image, FlatList, ActivityIndicator, Dimensions, TextInput, StyleSheet } from "react-native"; // Import UI components from React Native
 import { supabase } from "../lib/supabase"; // adjust path if needed
 
 export default function HomeScreen() { // Main component for the home screen that displays a feed of uploaded items
@@ -17,6 +17,9 @@ export default function HomeScreen() { // Main component for the home screen tha
   const screenWidth = Dimensions.get("window").width; // Get the width of the device screen to calculate card sizes for a responsive layout
   const spacing = 10; // Spacing between cards in the grid layout
   const cardWidth = (screenWidth - spacing) / 2; // Calculate the width of each card in a 2-column grid layout, accounting for spacing
+
+  //search bar
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Load the initial set of items when the component mounts
   useEffect(() => {
@@ -85,6 +88,27 @@ export default function HomeScreen() { // Main component for the home screen tha
     setRefreshing(false);
   }, []);
 
+  //Search
+  const filteredItems = items.filter((item) => {
+    const query = searchQuery.toLowerCase().trim();
+
+    if (!query) return true;
+
+    const title = String(item.title ?? "").toLowerCase();
+    const size = String(item.size ?? "").toLowerCase();
+    const location = String(item.location ?? "").toLowerCase();
+    const tags = Array.isArray(item.tags)
+      ? item.tags.join(" ").toLowerCase()
+      : String(item.tags ?? "").toLowerCase();
+
+    return (
+      title.includes(query) ||
+      size.includes(query) ||
+      location.includes(query) ||
+      tags.includes(query)
+    );
+  });
+
   // Function to render each item in the FlatList, displaying the image and its metadata in a card layout
   const renderItem = ({ item, index }) => (
     <View
@@ -103,7 +127,7 @@ export default function HomeScreen() { // Main component for the home screen tha
         resizeMode="cover"
       />
       <Text style={{ fontSize: 18, fontWeight: "bold", marginTop: 10 }}>{item.title}</Text>
-      <Text style={{ marginTop: 5, color: "#555" }}>{item.description}</Text>
+      <Text style={{ marginTop: 5, color: "#555" }}>{item.tags?.join(" • ")}</Text>
       <Text style={{ marginTop: 5, color: "#555" }}>Size : {item.size}</Text>
       <Text style={{ marginTop: 5, color: "#555" }}>{item.location}</Text>
       <Text style={{ marginTop: 5, color: "#555" }}>£{item.price}</Text>
@@ -120,25 +144,55 @@ export default function HomeScreen() { // Main component for the home screen tha
 
   // Render the FlatList of items, with support for pull-to-refresh and infinite scrolling
   return (
-    <FlatList
-      data={items}
-      keyExtractor={(item) => item.id.toString()}
-      renderItem={renderItem}
-      numColumns={2}
-      columnWrapperStyle={{}}
-      refreshing={refreshing}
-      onRefresh={onRefresh}
-      onEndReached={loadMore}
-      onEndReachedThreshold={0.5}
-      ListFooterComponent={
-        loadingMore ? (
-          <ActivityIndicator style={{ marginVertical: 20 }} />
-        ) : !hasMore ? (
-          <Text style={{ textAlign: "center", marginVertical: 20, color: "#888" }}>
-            No more posts
-          </Text>
-        ) : null
-      }
-    />
+    <View style={styles.container}>
+      <View style={styles.searchWrapper}>
+        <TextInput
+          style={styles.searchBar}
+          placeholder="Search by title, tag, size, or location"
+          placeholderTextColor="#888"
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+        />
+      </View>
+
+      <FlatList
+        data={filteredItems}
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={renderItem}
+        numColumns={2}
+        columnWrapperStyle={{}}
+        refreshing={refreshing}
+        onRefresh={onRefresh}
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={
+          loadingMore ? (
+            <ActivityIndicator style={{ marginVertical: 20 }} />
+          ) : !hasMore ? (
+            <Text style={{ textAlign: "center", marginVertical: 20, color: "#888" }}>
+              No more posts
+            </Text>
+          ) : null
+        }
+      />
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+searchWrapper: {
+    width: "100%",
+    alignSelf: "stretch",
+  },
+
+  searchBar: {
+    width: "100%",
+    alignSelf: "stretch",
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    marginBottom: 10,
+    elevation: 2,
+  },
+});

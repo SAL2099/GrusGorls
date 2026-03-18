@@ -102,8 +102,8 @@ export default function ListingDetail() {
 
                     <View style={styles.divider} />
 
-                    <Text style={styles.label}>Description</Text>
-                    <Text style={styles.text}>{item.description}</Text>
+                    <Text style={styles.label}>Tags</Text>
+                    <Text style={styles.text}>{item.tags?.join(" • ")}</Text>
 
                     <Text style={styles.label}>Size</Text>
                     <Text style={styles.text}>{item.size || "N/A"}</Text>

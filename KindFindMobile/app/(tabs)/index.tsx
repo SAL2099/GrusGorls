@@ -15,10 +15,10 @@ export default function Home() { // Define and export the HomeScreen component
 const styles = StyleSheet.create({ // Create a StyleSheet for the HomeScreen component
   container: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
+  
   text: {
     color: '#fff',
   },
 });
+

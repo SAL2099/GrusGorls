@@ -353,7 +353,7 @@ export default function ProfileScreen() {
                             id: item.id,
                             title: item.title,
                             image_url: item.image_url,
-                            description: item.description,
+                            tags: item.tags,
                             price: item.price,
                             size: item.size,
                             location: item.location
@@ -397,7 +397,7 @@ export default function ProfileScreen() {
                   id: item.id,
                   title: item.title,
                   image_url: item.image_url,
-                  description: item.description,
+                  tags: item.tags,
                   price: item.price,
                   size: item.size,
                   location: item.location
