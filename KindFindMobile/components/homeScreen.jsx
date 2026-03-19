@@ -3,6 +3,7 @@ import { useIsFocused } from "@react-navigation/native";
 import { View, Text, Image, FlatList, ActivityIndicator, Dimensions, TextInput, StyleSheet, Pressable } from "react-native"; // Import UI components from React Native
 import { supabase } from "../lib/supabase";
 import { Ionicons } from "@expo/vector-icons"; //Icon
+import { useRouter } from "expo-router";
 
 export default function HomeScreen() { // Main component for the home screen that displays a feed of uploaded items
   const isFocused = useIsFocused();
@@ -21,6 +22,9 @@ export default function HomeScreen() { // Main component for the home screen tha
 
   //search bar
   const [searchQuery, setSearchQuery] = useState("");
+
+  // navigation for pressable items
+  const router = useRouter();
 
   // Load the initial set of items when the component mounts
   useEffect(() => {
@@ -112,7 +116,13 @@ export default function HomeScreen() { // Main component for the home screen tha
 
   // Function to render each item in the FlatList, displaying the image and its metadata in a card layout
   const renderItem = ({ item, index }) => (
-    <View
+    // making the items pressable so it can take to a new page
+    <Pressable
+      onPress={() => router.push({
+        pathname: "/ItemDetails",
+        params: { item: JSON.stringify(item) }
+      })}
+
       style={[
         styles.card,
         {
@@ -170,7 +180,7 @@ export default function HomeScreen() { // Main component for the home screen tha
       <Text style={styles.cardMeta} numberOfLines={1}>
         {item.location}
       </Text>
-    </View>
+    </Pressable>
   );
 
   // If the initial data is still loading, show a loading indicator instead of the list

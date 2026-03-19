@@ -120,11 +120,14 @@ export default function SignUpScreen() {
         try {
             // Check profiles to ensure a store isn't making two accounts
             if (role === "store") {
+                console.log("Selected shop:", selectedShop);
                 const { data: existingStore } = await supabase
                     .from("profiles")
                     .select("id")
                     .eq("store_id", String(selectedShop))
                     .maybeSingle();
+
+                    console.log("Existing store result:", existingStore);
 
                 if (existingStore) {
                     setLoading(false);
@@ -138,7 +141,11 @@ export default function SignUpScreen() {
                 password,
             });
 
-            if (authError) throw authError;
+            if (authError) {
+                setLoading(false);
+                return Alert.alert("Sign up failed", authError.message);
+            }
+
             const userId = authData.user?.id;
 
             // This is turned off for now but the code is here for when we turn on email confirm
@@ -160,9 +167,11 @@ export default function SignUpScreen() {
             }]);
 
             if (profileError) {
+                console.log("PROFILE ERROR: ", profileError);
+
                 //Sign them out if another account is registered
                 await supabase.auth.signOut();
-
+                
                 if (profileError.code === "23505") {
                     throw new Error("This store was has been registered by another user.");
                 }
