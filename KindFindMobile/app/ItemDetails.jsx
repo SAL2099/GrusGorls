@@ -34,6 +34,49 @@ export default function ItemDetails() {
     loadStores();
   }, [parsedItem]);
 
+const [user, setUser] = useState(null);
+
+useEffect(() => {
+  async function loadUser() {
+    const { data, error } = await supabase.auth.getUser();
+    if (!error && data?.user) {
+      setUser(data.user);
+    }
+  }
+  loadUser();
+}, []);
+
+  const handleReserve = async () => {
+    if (!user) {
+      console.log("User not loaded yet");
+      return;
+    }
+
+    const { data } = await supabase
+      .from("photos")
+      .select("*")
+      .eq("id", Number(parsedItem.id));
+
+    console.log("Row found:", data);
+
+    const { error } = await supabase
+      .from("photos")
+      .update({
+        reserved: true,
+        reserved_by: user.id,
+        reserved_at: new Date().toISOString()
+      })
+      .eq("id", Number(parsedItem.id));
+
+      if (error) {
+        console.error("Error reserving item: ", error);
+        return;
+      }
+
+      console.log("Parsed item: ", parsedItem);
+      console.log("Item reserved!")
+    };
+
   return (
     <Screen>
       <ScrollView style={styles.container}>
@@ -80,7 +123,7 @@ export default function ItemDetails() {
           )}
 
           {isStoreMatch && (
-            <Pressable style={styles.reserveButton}>
+            <Pressable style={styles.reserveButton} onPress={handleReserve}>
               <Text style={styles.reserveButtonText}>Reserve</Text>
             </Pressable>
           )}

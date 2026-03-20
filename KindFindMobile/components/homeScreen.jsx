@@ -40,6 +40,7 @@ export default function HomeScreen() { // Main component for the home screen tha
     const { data, error } = await supabase
       .from("photos")
       .select("*")
+      .eq("reserved", false)
       .order("created_at", { ascending: false })
       .range(0, PAGE_SIZE - 1);
 
@@ -205,8 +206,10 @@ export default function HomeScreen() { // Main component for the home screen tha
       <FlatList
         data={filteredItems}
         keyExtractor={(item) => item.id.toString()}
-        renderItem={renderItem}
         numColumns={2}
+        renderItem= {({ item }) => (
+          <ItemCard item={item} onPress={() => router.push('/item/${item.id}')} />
+        )}
         contentContainerStyle={{ paddingBottom: 20 }}
         columnWrapperStyle={{}}
         refreshing={refreshing}
