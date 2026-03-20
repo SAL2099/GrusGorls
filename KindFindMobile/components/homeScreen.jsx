@@ -256,7 +256,7 @@ const styles = StyleSheet.create({
 
   //Polaroid photos 
   card: {
-    backgroundColor: "#FFF",
+    backgroundColor: "#eef2e4",
     borderRadius: 14,
     padding: 10,
     marginBottom: 16,
@@ -298,7 +298,6 @@ const styles = StyleSheet.create({
   },
 
   tagChip: {
-    backgroundColor: "#fff",
     borderRadius: 20,
     paddingHorizontal: 8,
     paddingVertical: 4,

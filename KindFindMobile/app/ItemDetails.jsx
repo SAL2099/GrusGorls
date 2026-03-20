@@ -82,7 +82,7 @@ useEffect(() => {
       <ScrollView style={styles.container}>
         <Pressable style={styles.backBtn} onPress={() => router.back()}>
           <Image
-            source={require('../assets/images/Back Arrow.png')}  
+            source={require('../assets/images/Back Arrow.png')}
             style={styles.backBtnImage}
           />
         </Pressable>
@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 26,
     fontWeight: "700",
-    color: "#FFF",
+    color: "#000000",
     marginBottom: 10,
   },
 
@@ -169,15 +169,15 @@ const styles = StyleSheet.create({
   },
 
   label: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#fff",
-    marginBottom: 4,
+    color: "#000000",
+    fontSize: 12,
+    fontWeight: "800",
+    textTransform: "uppercase",
   },
 
   value: {
     fontSize: 16,
-    color: "#FFF",
+    color: "#000000",
   },
 
   //reserve button
@@ -197,7 +197,7 @@ const styles = StyleSheet.create({
 
   //card style
   card: {
-    backgroundColor: "#121C0C",
+    backgroundColor: "#eef2e4",
     borderRadius: 14,
     padding: 20,
     paddingTop: 17,
