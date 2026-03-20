@@ -1,75 +1,93 @@
 // get info for items
 import { View, Text, Image, StyleSheet, ScrollView, Pressable } from "react-native";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 
 // get locations of shops from supabase
 import { supabase } from "../lib/supabase";
 import { useEffect, useState } from "react";
+import Screen from "../components/Screen";
 
 export default function ItemDetails() {
   const { item } = useLocalSearchParams();
   const parsedItem = JSON.parse(item);
+  const router = useRouter();
 
   // matching location of item to a store that has an account
   const [stores, setStores] = useState([]);
   const [isStoreMatch, setIsStoreMatch] = useState(false);
 
   useEffect(() => {
-  if (!parsedItem?.store_id) return; // wait until item is loaded
+    if (!parsedItem?.store_id) return; // wait until item is loaded
 
-  async function loadStores() {
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("store_id, role")
-      .eq("role", "store");
+    async function loadStores() {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("store_id, role")
+        .eq("role", "store");
 
-    if (!error && data) {
-      const match = data.some(shop => shop.store_id === parsedItem.store_id);
-      setIsStoreMatch(match);
+      if (!error && data) {
+        const match = data.some(shop => shop.store_id === parsedItem.store_id);
+        setIsStoreMatch(match);
+      }
     }
-  }
 
-  loadStores();
-}, [parsedItem]);
+    loadStores();
+  }, [parsedItem]);
 
   return (
-    <ScrollView style={styles.container}>
-      <Image
-        source={{ uri: parsedItem.image_url }}
-        style={styles.image}
-        resizeMode="cover"
-      />
-
-      <Text style={styles.title}>{parsedItem.title}</Text>
-
-      <Text style={styles.price}>£{parsedItem.price}</Text>
-
-      <View style={styles.section}>
-        <Text style={styles.label}>Size</Text>
-        <Text style={styles.value}>{parsedItem.size}</Text>
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.label}>Location</Text>
-        <Text style={styles.value}>{parsedItem.location}</Text>
-      </View>
-
-      {parsedItem.tags?.length > 0 && (
-        <View style={styles.section}>
-          <Text style={styles.label}>Tags</Text>
-          <Text style={styles.value}>{parsedItem.tags.join(", ")}</Text>
-        </View>
-      )}
-
-      {isStoreMatch && (
-        <Pressable style={styles.reserveButton}>
-          <Text style={styles.reserveButtonText}>Reserve</Text>
+    <Screen>
+      <ScrollView style={styles.container}>
+        <Pressable style={styles.backBtn} onPress={() => router.back()}>
+          <Image
+            source={require('../assets/images/Back Arrow.png')}  
+            style={styles.backBtnImage}
+          />
         </Pressable>
-      )}
+        <View style={styles.card}>
+          <Image
+            source={{ uri: parsedItem.image_url }}
+            style={styles.image}
+            resizeMode="cover"
+          />
 
-      <View style={{ height: 40 }} />
+          <Text style={styles.title}>{parsedItem.title}</Text>
 
-    </ScrollView>
+          <Text style={styles.price}>£{parsedItem.price}</Text>
+
+          <View style={styles.section}>
+            <Text style={styles.label}>Size</Text>
+            <Text style={styles.value}>{parsedItem.size}</Text>
+          </View>
+
+          <View style={styles.section}>
+            <Text style={styles.label}>Location</Text>
+            <Text style={styles.value}>{parsedItem.location}</Text>
+          </View>
+
+          {parsedItem.tags?.length > 0 && (
+            <View style={styles.section}>
+              <Text style={styles.label}>Tags</Text>
+
+              <View style={styles.tagRow}>
+                {parsedItem.tags.map((tag, index) => (
+                  <View key={index} style={styles.tagChip}>
+                    <Text style={styles.tagChipText}>{tag}</Text>
+                  </View>
+                ))}
+              </View>
+
+            </View>
+          )}
+
+          {isStoreMatch && (
+            <Pressable style={styles.reserveButton}>
+              <Text style={styles.reserveButtonText}>Reserve</Text>
+            </Pressable>
+          )}
+        </View>
+        <View style={{ height: 40 }} />
+      </ScrollView>
+    </Screen>
   );
 }
 
@@ -78,9 +96,10 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
     paddingBottom: 100,
-    backgroundColor: "#fff",
+    backgroundColor: "#192710",
   },
 
+  //Item details
   image: {
     width: "100%",
     height: 350,
@@ -91,7 +110,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 26,
     fontWeight: "700",
-    color: "#111",
+    color: "#FFF",
     marginBottom: 10,
   },
 
@@ -109,26 +128,79 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#777",
+    color: "#fff",
     marginBottom: 4,
   },
 
   value: {
     fontSize: 16,
-    color: "#111",
+    color: "#FFF",
   },
 
+  //reserve button
   reserveButton: {
-  backgroundColor: "#CE6674",
-  paddingVertical: 14,
-  borderRadius: 10,
-  alignItems: "center",
-  marginTop: 20,
-},
+    backgroundColor: "#CE6674",
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: "center",
+    marginTop: 20,
+  },
 
-reserveButtonText: {
-  color: "#fff",
-  fontSize: 16,
-  fontWeight: "700",
-},
+  reserveButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+
+  //card style
+  card: {
+    backgroundColor: "#121C0C",
+    borderRadius: 14,
+    padding: 20,
+    paddingTop: 17,
+    marginTop: 10,
+    marginBottom: 16,
+    elevation: 2,
+  },
+
+  //back button
+  backBtn: {
+    backgroundColor: "#CE6674",
+    padding: 15,
+    marginHorizontal: 16,
+    marginTop: 20,
+    borderRadius: 12,
+    alignItems: "center",
+    width: 50,
+  },
+
+  backBtnImage: {
+    width: 20,
+    height: 20,
+  },
+
+  buttonText: { color: "#fff", fontWeight: "900" },
+
+  //tags 
+  tagRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginTop: 8,
+    gap: 8,
+  },
+
+  tagChip: {
+    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderWidth: 1.5,
+    borderColor: "#CE6674",
+  },
+
+  tagChipText: {
+    fontSize: 11,
+    fontWeight: "600",
+    color: "#CE6674",
+  },
+
 });

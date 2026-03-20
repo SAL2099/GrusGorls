@@ -90,7 +90,7 @@ export default function ListingDetail() {
             <ScrollView contentContainerStyle={styles.scrollContainer}>
                 <Pressable style={styles.backBtn} onPress={() => router.back()}>
                     <Image
-                        source={require('../../assets/images/Back Arrow.png')}  //Replace with Logo2 or Logo3 if you want to test those
+                        source={require('../../assets/images/Back Arrow.png')} 
                         style={styles.backBtnImage}
                     />
                 </Pressable>
