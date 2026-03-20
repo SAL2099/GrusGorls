@@ -145,14 +145,14 @@ const styles = StyleSheet.create({
 
     //Container for the listing content
     card: {
-        backgroundColor: "#121C0C",
+        backgroundColor: "#eef2e4",
         borderRadius: 16,
         padding: 20,
         margin: 5
     },
 
     title: {
-        color: "#fff",
+        color: "#000000",
         fontSize: 24,
         fontWeight: "900",
         paddingTop: 12
@@ -162,25 +162,25 @@ const styles = StyleSheet.create({
         color: "#CE6674",
         fontSize: 20,
         fontWeight: "bold",
-        marginTop: 8
+        marginTop: 8,
     },
 
     divider: {
         height: 1,
         backgroundColor: "rgba(255,255,255,0.1)",
-        marginVertical: 15
+        marginVertical: 5
     },
 
     label: {
-        color: "#A7A7A7",
+        color: "#000000",
         fontSize: 12,
         fontWeight: "800",
         textTransform: "uppercase",
-        marginTop: 12
+        marginTop: 12,
     },
 
     text: {
-        color: "#fff",
+        color: "#000000",
         fontSize: 16,
         marginTop: 4
     },
@@ -191,6 +191,7 @@ const styles = StyleSheet.create({
         padding: 15,
         marginHorizontal: 16,
         borderRadius: 12,
+        marginTop: 10,
         alignItems: "center"
     },
 
@@ -199,6 +200,7 @@ const styles = StyleSheet.create({
         padding: 15,
         marginHorizontal: 16,
         marginTop: 40,
+        marginBottom: 10,
         borderRadius: 12,
         alignItems: "center",
         width: 50,
