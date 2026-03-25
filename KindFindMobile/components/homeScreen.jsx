@@ -34,6 +34,51 @@ export default function HomeScreen() { // Main component for the home screen tha
     }
   }, [isFocused]);
 
+  // Listens to the database If the item was reserved or collected, remove it from the list immediately 
+  useEffect(() => {
+    const channel = supabase
+      .channel('table-db-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen for ALL changes (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'photos'
+        },
+        (payload) => {
+          if (payload.eventType === 'DELETE') {
+            // If a row is deleted, remove it from the list by ID
+            setItems((prev) => prev.filter((item) => item.id !== payload.old.id));
+          }
+
+          else if (payload.eventType === 'UPDATE') {
+            const updatedItem = payload.new;
+
+            // Logic: Remove if it's now reserved/collected, otherwise update the data
+            if (updatedItem.reserved === true || updatedItem.collected_at !== null) {
+              setItems((prev) => prev.filter((item) => item.id !== updatedItem.id));
+            } else {
+              setItems((prev) =>
+                prev.map((item) => (item.id === updatedItem.id ? updatedItem : item))
+              );
+            }
+          }
+
+          else if (payload.eventType === 'INSERT') {
+            //If someone uploads a new item, put it at the top of the list
+            if (!payload.new.reserved && !payload.new.collected_at) {
+              setItems((prev) => [payload.new, ...prev]);
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   // Function to load the initial set of items from the Supabase database
   async function loadInitial() {
     setLoading(true);
@@ -68,6 +113,7 @@ export default function HomeScreen() { // Main component for the home screen tha
       .from("photos")
       .select("*")
       .eq("reserved", false)
+      .is("collected_at", null)
       .order("created_at", { ascending: false })
       .range(from, to);
 
@@ -86,6 +132,7 @@ export default function HomeScreen() { // Main component for the home screen tha
       .from("photos")
       .select("*")
       .eq("reserved", false)
+      .is("collected_at", null)
       .order("created_at", { ascending: false })
       .range(0, PAGE_SIZE - 1);
 

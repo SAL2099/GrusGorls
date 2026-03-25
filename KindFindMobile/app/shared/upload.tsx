@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from "react"; // React Native component for uploading images and metadata to Supabase
-import { View, Text, Button, Image, TextInput, StyleSheet, ActivityIndicator, Alert, Pressable } from "react-native"; // UI components from React Native
+import React, { useState, useEffect, useRef } from "react"; // React Native component for uploading images and metadata to Supabase
+import { View, Text, Button, Image, TextInput, StyleSheet, ActivityIndicator, Alert, Pressable, Modal, Animated } from "react-native"; // UI components from React Native
 import * as ImagePicker from "expo-image-picker"; // Expo module for picking images from the device's library
 import * as Location from "expo-location"; // Needed to get user GPS
 import { Dropdown } from 'react-native-element-dropdown'; // Dropdown component for selecting nearby shops
@@ -49,6 +49,9 @@ export default function UploadScreen() {
   const [userLocation, setUserLocation] = useState<UserLocation | null>(null);
   const [userProfile, setUserProfile] = useState<any>(null);
 
+  // Polaroid State & Animation
+  const [isPrinting, setIsPrinting] = useState(false);
+  const slideAnim = useRef(new Animated.Value(-200)).current;
 
 
   //Current tags
@@ -58,6 +61,17 @@ export default function UploadScreen() {
     Types: ["Top", "Dress", "Jacket", "Jeans", "Skirt", "Shoes", "Bag", "Household"],
     Condition: ["New", "Like New", "Good", "Worn"],
   };
+
+  useEffect(() => {
+    if (isPrinting) {
+      slideAnim.setValue(-200);
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 3000,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [isPrinting]);
 
   useEffect(() => {
     (async () => {
@@ -172,17 +186,21 @@ export default function UploadScreen() {
     ]);
 
     if (error) {
-      console.log("DB ERROR:", error);
-      alert("Failed to save info");
+      Alert.alert("Error", "Failed to save info");
     } else {
-      //reset
-      alert("Saved!");
-      setTitle("");
-      setImageUrl(null);
-      setSize("");
-      setLocation("");
-      setPrice("");
-      setSelectedTags([]);
+      setIsPrinting(true);
+
+      setTimeout(() => {
+        setIsPrinting(false);
+        // Reset form
+        setTitle("");
+        setImageUrl(null);
+        setSize("");
+        setLocation("");
+        setPrice("");
+        setSelectedTags([]);
+        Alert.alert("Success!", "Your photo has been developed.");
+      }, 4500); // Slightly longer than the animation
     }
   };
 
@@ -343,6 +361,37 @@ export default function UploadScreen() {
           </KeyboardAwareScrollView>
         )}
       </View>
+
+      {/* PRINTING MODAL */}
+      {isPrinting && (
+        <Modal visible={isPrinting} transparent={true} animationType="fade">
+          <View style={styles.printingOverlay}>
+            <View style={styles.cameraContainer}>
+
+              {/* The Camera Body */}
+              <View style={styles.cameraTop} />
+
+              {/* The Hidden Slot */}
+              <View style={styles.printerMouth}>
+                <Animated.View style={[
+                  styles.printingPhoto,
+                  { transform: [{ translateY: slideAnim }] }
+                ]}>
+                  <View style={styles.polaroidFrame}>
+                    <Image
+                      source={{ uri: imageUrl || '' }}
+                      style={styles.polaroidImage}
+                    />
+                    <Text style={styles.polaroidText}>{title || "Untitled"}</Text>
+                  </View>
+                </Animated.View>
+              </View>
+
+              <Text style={styles.developingText}>Developing...</Text>
+            </View>
+          </View>
+        </Modal>
+      )}
     </Screen>
   );
 }
@@ -518,7 +567,71 @@ const styles = StyleSheet.create({
 
   buttonText: {
     color: "#FFF"
-  }
+  },
+
+  //Poloroid printing 
+  printingOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  cameraContainer: {
+    alignItems: 'center',
+    width: '100%',
+  },
+  cameraTop: {
+    width: 240,
+    height: 80,
+    backgroundColor: '#333',
+    borderTopLeftRadius: 15,
+    borderTopRightRadius: 15,
+    zIndex: 20,
+    borderBottomWidth: 8,
+    borderBottomColor: '#111',
+  },
+  printerMouth: {
+    width: 240,
+    height: 300,
+    overflow: 'hidden',
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  printingPhoto: {
+    zIndex: 5,
+    marginTop: -10,
+  },
+  polaroidFrame: {
+    width: 190,
+    backgroundColor: '#FFF',
+    padding: 12,
+    paddingBottom: 35,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.5,
+    shadowRadius: 10,
+    elevation: 20,
+  },
+  polaroidImage: {
+    width: 166,
+    height: 166,
+    backgroundColor: '#222', // Looks like a black film before it "develops"
+  },
+  polaroidText: {
+    marginTop: 15,
+    textAlign: 'center',
+    fontSize: 18,
+    color: '#333',
+    fontWeight: '500',
+  },
+  developingText: {
+    color: '#FFF',
+    marginTop: 50,
+    fontSize: 18,
+    fontWeight: 'bold',
+    letterSpacing: 3,
+  },
 });
+
 
 
