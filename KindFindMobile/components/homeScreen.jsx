@@ -4,6 +4,7 @@ import { View, Text, Image, FlatList, ActivityIndicator, Dimensions, TextInput, 
 import { supabase } from "../lib/supabase";
 import { Ionicons } from "@expo/vector-icons"; //Icon
 import { useRouter } from "expo-router";
+import ItemCard from './ItemCard';
 
 export default function HomeScreen() { // Main component for the home screen that displays a feed of uploaded items
   const isFocused = useIsFocused();
@@ -65,6 +66,7 @@ export default function HomeScreen() { // Main component for the home screen tha
     const { data, error } = await supabase
       .from("photos")
       .select("*")
+      .eq("reserved", false)
       .order("created_at", { ascending: false })
       .range(from, to);
 
@@ -82,6 +84,7 @@ export default function HomeScreen() { // Main component for the home screen tha
     const { data, error } = await supabase
       .from("photos")
       .select("*")
+      .eq("reserved", false)
       .order("created_at", { ascending: false })
       .range(0, PAGE_SIZE - 1);
 
@@ -120,7 +123,7 @@ export default function HomeScreen() { // Main component for the home screen tha
     // making the items pressable so it can take to a new page
     <Pressable
       onPress={() => router.push({
-        pathname: "/ItemDetails",
+        pathname: "/Item/ItemDetails",
         params: { item: JSON.stringify(item) }
       })}
 
@@ -207,11 +210,19 @@ export default function HomeScreen() { // Main component for the home screen tha
         data={filteredItems}
         keyExtractor={(item) => item.id.toString()}
         numColumns={2}
+        columnWrapperStyle={{ justifyContent: "space-between"}}
         renderItem= {({ item }) => (
-          <ItemCard item={item} onPress={() => router.push('/item/${item.id}')} />
+          <ItemCard 
+            item={item} 
+            onPress={() => 
+              router.push({
+                pathname: "/Item/ItemDetails",
+                params: {item: JSON.stringify(item) }
+              })
+            }
+          />
         )}
         contentContainerStyle={{ paddingBottom: 20 }}
-        columnWrapperStyle={{}}
         refreshing={refreshing}
         onRefresh={onRefresh}
         onEndReached={loadMore}

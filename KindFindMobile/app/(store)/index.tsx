@@ -77,10 +77,10 @@ export default function StoreHomeScreen() {
         .eq("store_id", storeProfile.store_id)
         .eq("reserved", true);
 
-        console.log("PROFILE:", storeProfile);
-        console.log("STORE ID:", storeProfile?.store_id);
-        console.log("FETCHED ITEMS:", data);
-        console.log("ERROR:", error);
+        // console.log("PROFILE:", storeProfile);
+        // console.log("STORE ID:", storeProfile?.store_id);
+        // console.log("FETCHED ITEMS:", data);
+        // console.log("ERROR:", error);
 
       if (!error) setItems(data);
     })();
@@ -144,6 +144,7 @@ export default function StoreHomeScreen() {
           data={filteredItems}
           keyExtractor={(item) => item.id.toString()}
           numColumns={2}
+          columnWrapperStyle={{ justifyContent: "space-between" }}
           renderItem={({ item }) => (
             <ItemCard
               item={item}

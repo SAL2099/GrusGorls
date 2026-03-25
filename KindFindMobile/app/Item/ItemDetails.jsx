@@ -1,11 +1,11 @@
 // get info for items
-import { View, Text, Image, StyleSheet, ScrollView, Pressable } from "react-native";
+import { View, Text, Image, StyleSheet, ScrollView, Pressable, Alert } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 
 // get locations of shops from supabase
-import { supabase } from "../lib/supabase";
+import { supabase } from "../../lib/supabase";
 import { useEffect, useState } from "react";
-import Screen from "../components/Screen";
+import Screen from "../../components/Screen";
 
 export default function ItemDetails() {
   const { item } = useLocalSearchParams();
@@ -52,13 +52,6 @@ useEffect(() => {
       return;
     }
 
-    const { data } = await supabase
-      .from("photos")
-      .select("*")
-      .eq("id", Number(parsedItem.id));
-
-    console.log("Row found:", data);
-
     const { error } = await supabase
       .from("photos")
       .update({
@@ -73,8 +66,17 @@ useEffect(() => {
         return;
       }
 
-      console.log("Parsed item: ", parsedItem);
-      console.log("Item reserved!")
+      Alert.alert(
+        "Reserved!", 
+        "This item has been successfully reserved.",
+        [
+          {
+            text: "OK",
+            onPress: () => router.replace("/(tabs)") // sends user back to home page
+          }
+        ]
+      )
+
     };
 
   return (
@@ -82,7 +84,7 @@ useEffect(() => {
       <ScrollView style={styles.container}>
         <Pressable style={styles.backBtn} onPress={() => router.back()}>
           <Image
-            source={require('../assets/images/Back Arrow.png')}
+            source={require('../../assets/images/Back Arrow.png')}
             style={styles.backBtnImage}
           />
         </Pressable>

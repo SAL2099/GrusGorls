@@ -46,13 +46,13 @@ export default function ItemCard({ item, onPress, showReservedInfo = false }: Pr
 
 const styles = StyleSheet.create({
   card: {
-    flex: 1,
     backgroundColor: "#FFF",
     borderRadius: 14,
     padding: 10,
     marginBottom: 16,
     marginHorizontal: 6,
     elevation: 2,
+    width: "48%",
   },
   cardImage: {
     width: "100%",
