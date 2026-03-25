@@ -38,7 +38,7 @@ export default function LoginScreen() {
             if (profileError) throw profileError;
 
             if (profile.role === "store") {
-                router.replace("../(store)");
+                router.replace("../(store)/tabs");
             }
             else {
                 router.replace("../(tabs)");

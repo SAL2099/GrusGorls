@@ -1,23 +1,68 @@
-// get info for items
 import { View, Text, Image, StyleSheet, ScrollView, Pressable, Alert } from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
-
-// get locations of shops from supabase
+import { useLocalSearchParams, useRouter, useSegments } from "expo-router";
 import { supabase } from "../../lib/supabase";
 import { useEffect, useState } from "react";
 import Screen from "../../components/Screen";
 
 export default function ItemDetails() {
-  const { item } = useLocalSearchParams();
-  const parsedItem = JSON.parse(item);
+  const { item, id } = useLocalSearchParams();
   const router = useRouter();
+  const segments = useSegments();
 
-  // matching location of item to a store that has an account
+  // Detect if this screen is being viewed inside the (store) route group
+  const isStoreView = segments.includes("(store)");
+
+  const [parsedItem, setParsedItem] = useState(null);
   const [stores, setStores] = useState([]);
   const [isStoreMatch, setIsStoreMatch] = useState(false);
+  const [user, setUser] = useState(null);
 
+  // Load item depending on how the screen was opened
   useEffect(() => {
-    if (!parsedItem?.store_id) return; // wait until item is loaded
+    async function load() {
+      // Case 1: user passed full JSON item
+      if (item) {
+        try {
+          const parsed = JSON.parse(item);
+          setParsedItem(parsed);
+          return;
+        } catch (e) {
+          console.error("Failed to parse item JSON:", e);
+        }
+      }
+
+      // Case 2: store passed only ID
+      if (id) {
+        const { data, error } = await supabase
+          .from("photos")
+          .select("*")
+          .eq("id", Number(id))
+          .single();
+
+        if (!error && data) {
+          setParsedItem(data);
+        }
+      }
+    }
+
+    load();
+  }, [item, id]);
+
+  // Load user
+  useEffect(() => {
+    async function loadUser() {
+      const { data, error } = await supabase.auth.getUser();
+      if (!error && data?.user) {
+        setUser(data.user);
+      }
+    }
+    loadUser();
+  }, []);
+
+  // Match store_id to store profiles
+  useEffect(() => {
+    if (!parsedItem) return;
+    if (!parsedItem.store_id) return;
 
     async function loadStores() {
       const { data, error } = await supabase
@@ -34,50 +79,69 @@ export default function ItemDetails() {
     loadStores();
   }, [parsedItem]);
 
-const [user, setUser] = useState(null);
-
-useEffect(() => {
-  async function loadUser() {
-    const { data, error } = await supabase.auth.getUser();
-    if (!error && data?.user) {
-      setUser(data.user);
-    }
-  }
-  loadUser();
-}, []);
-
+  // Reserve handler (user only)
   const handleReserve = async () => {
-    if (!user) {
-      console.log("User not loaded yet");
-      return;
-    }
+    if (!user) return;
+
+    const reservationNumber = Math.floor(100000 + Math.random() * 900000);
+
+    if (!parsedItem) return;
 
     const { error } = await supabase
       .from("photos")
       .update({
         reserved: true,
         reserved_by: user.id,
-        reserved_at: new Date().toISOString()
+        reserved_at: new Date().toISOString(),
+        reservation_number: reservationNumber
       })
       .eq("id", Number(parsedItem.id));
 
-      if (error) {
-        console.error("Error reserving item: ", error);
-        return;
-      }
+    if (error) {
+      console.error("Error reserving item: ", error);
+      return;
+    }
 
-      Alert.alert(
-        "Reserved!", 
-        "This item has been successfully reserved.",
-        [
-          {
-            text: "OK",
-            onPress: () => router.replace("/(tabs)") // sends user back to home page
-          }
-        ]
-      )
+    Alert.alert(
+      "Reserved!",
+      `Your reservation number is ${reservationNumber}.`,
+      [{ text: "OK", onPress: () => router.replace("/(tabs)") }]
+    );
+  };
 
-    };
+  // Mark as collected (store only)
+  const handleCollected = async () => {
+    if (!parsedItem) return;
+
+    const { error } = await supabase
+      .from("photos")
+      .update({
+        reserved: false,
+        reserved_by: null,
+        reserved_at: null,
+        reservation_number: null,
+        collected_at: new Date().toISOString()
+      })
+      .eq("id", Number(parsedItem.id));
+
+    if (error) {
+      console.error("Error marking collected:", error);
+      return;
+    }
+
+    Alert.alert("Collected", "Item marked as collected.", [
+      { text: "OK", onPress: () => router.replace("/(store)") }
+    ]);
+  };
+
+  // Loading state
+  if (!parsedItem) {
+    return (
+      <Screen>
+        <Text style={{ color: "white", padding: 20 }}>Loading item…</Text>
+      </Screen>
+    );
+  }
 
   return (
     <Screen>
@@ -88,6 +152,7 @@ useEffect(() => {
             style={styles.backBtnImage}
           />
         </Pressable>
+
         <View style={styles.card}>
           <Image
             source={{ uri: parsedItem.image_url }}
@@ -96,7 +161,6 @@ useEffect(() => {
           />
 
           <Text style={styles.title}>{parsedItem.title}</Text>
-
           <Text style={styles.price}>£{parsedItem.price}</Text>
 
           <View style={styles.section}>
@@ -120,16 +184,31 @@ useEffect(() => {
                   </View>
                 ))}
               </View>
-
             </View>
           )}
 
-          {isStoreMatch && (
+          {/* USER VIEW — Reserve button */}
+          {!isStoreView && isStoreMatch && !parsedItem.reserved && (
             <Pressable style={styles.reserveButton} onPress={handleReserve}>
               <Text style={styles.reserveButtonText}>Reserve</Text>
             </Pressable>
           )}
+
+          {/* STORE VIEW — Reservation number + Mark as collected */}
+          {isStoreView && parsedItem.reserved && (
+            <View style={{ marginTop: 20 }}>
+              <Text style={styles.label}>Reservation Number</Text>
+              <Text style={[styles.value, { fontSize: 20, fontWeight: "700" }]}>
+                {parsedItem.reservation_number}
+              </Text>
+
+              <Pressable style={styles.reserveButton} onPress={handleCollected}>
+                <Text style={styles.reserveButtonText}>Mark as Collected</Text>
+              </Pressable>
+            </View>
+          )}
         </View>
+
         <View style={{ height: 40 }} />
       </ScrollView>
     </Screen>
@@ -144,7 +223,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#192710",
   },
 
-  //Item details
   image: {
     width: "100%",
     height: 350,
@@ -182,7 +260,6 @@ const styles = StyleSheet.create({
     color: "#000000",
   },
 
-  //reserve button
   reserveButton: {
     backgroundColor: "#CE6674",
     paddingVertical: 14,
@@ -197,7 +274,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
 
-  //card style
   card: {
     backgroundColor: "#eef2e4",
     borderRadius: 14,
@@ -208,7 +284,6 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
 
-  //back button
   backBtn: {
     backgroundColor: "#CE6674",
     padding: 15,
@@ -224,9 +299,6 @@ const styles = StyleSheet.create({
     height: 20,
   },
 
-  buttonText: { color: "#fff", fontWeight: "900" },
-
-  //tags 
   tagRow: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -247,5 +319,4 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#CE6674",
   },
-
 });

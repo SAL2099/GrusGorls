@@ -42,6 +42,7 @@ export default function HomeScreen() { // Main component for the home screen tha
       .from("photos")
       .select("*")
       .eq("reserved", false)
+      .is("collected_at", null)
       .order("created_at", { ascending: false })
       .range(0, PAGE_SIZE - 1);
 
@@ -210,7 +211,8 @@ export default function HomeScreen() { // Main component for the home screen tha
         data={filteredItems}
         keyExtractor={(item) => item.id.toString()}
         numColumns={2}
-        columnWrapperStyle={{ justifyContent: "space-between"}}
+        columnWrapperStyle={{ gap: 12 }}
+        contentContainerStyle={{ rowGap: 16 }}
         renderItem= {({ item }) => (
           <ItemCard 
             item={item} 
@@ -222,7 +224,6 @@ export default function HomeScreen() { // Main component for the home screen tha
             }
           />
         )}
-        contentContainerStyle={{ paddingBottom: 20 }}
         refreshing={refreshing}
         onRefresh={onRefresh}
         onEndReached={loadMore}
