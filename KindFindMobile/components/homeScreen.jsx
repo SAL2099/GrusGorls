@@ -213,13 +213,15 @@ export default function HomeScreen() { // Main component for the home screen tha
         numColumns={2}
         columnWrapperStyle={{ gap: 12 }}
         contentContainerStyle={{ rowGap: 16 }}
-        renderItem= {({ item }) => (
-          <ItemCard 
-            item={item} 
-            onPress={() => 
+        renderItem={({ item }) => (
+          <ItemCard
+            item={item}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            onPress={() =>
               router.push({
                 pathname: "/Item/ItemDetails",
-                params: {item: JSON.stringify(item) }
+                params: { item: JSON.stringify(item) }
               })
             }
           />

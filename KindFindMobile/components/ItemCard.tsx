@@ -1,4 +1,4 @@
-import { View, Text, Image, StyleSheet, TouchableOpacity } from "react-native";
+import { View, Text, Image, StyleSheet, TouchableOpacity, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
 export type Photo = {
@@ -14,9 +14,17 @@ type Props = {
   item: Photo;
   onPress?: () => void;
   showReservedInfo?: boolean;
+  searchQuery?: string;
+  setSearchQuery?: React.Dispatch<React.SetStateAction<string>>;
 };
 
-export default function ItemCard({ item, onPress, showReservedInfo = false }: Props) {
+export default function ItemCard({
+  item,
+  onPress,
+  showReservedInfo = false,
+  searchQuery = "",
+  setSearchQuery,
+}: Props) {
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.8}>
       <Image source={{ uri: item.image_url }} style={styles.cardImage} />
@@ -34,11 +42,33 @@ export default function ItemCard({ item, onPress, showReservedInfo = false }: Pr
       )}
 
       <View style={styles.tagRow}>
-        {item.tags?.map((tag, index) => (
-          <View key={index} style={styles.tagChip}>
-            <Text style={styles.tagChipText}>{tag}</Text>
-          </View>
-        ))}
+        {item.tags?.slice(0, 3).map((tag, index) => {
+          const isActive = searchQuery.toLowerCase() === tag.toLowerCase();
+
+          return (
+            <Pressable
+              key={index}
+              style={[
+                styles.tagChip,
+                isActive && styles.tagChipActive,
+              ]}
+              onPress={() =>
+                setSearchQuery?.((prev) =>
+                  prev.toLowerCase() === tag.toLowerCase() ? "" : tag
+                )
+              }
+            >
+              <Text
+                style={[
+                  styles.tagChipText,
+                  isActive && styles.tagChipTextActive,
+                ]}
+              >
+                {tag}
+              </Text>
+            </Pressable>
+          );
+        })}
       </View>
     </TouchableOpacity>
   );
@@ -96,5 +126,13 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "600",
     color: "#CE6674",
+  },
+
+  tagChipActive: {
+    backgroundColor: "#CE6674",
+  },
+
+  tagChipTextActive: {
+    color: "#fff",
   },
 });
