@@ -58,7 +58,7 @@ export default function UploadScreen() {
   const tagCategories = {
     Colours: ["Black", "White", "Red", "Blue", "Green", "Pink", "Brown", "Grey", "Yellow", "Multicoloured"],
     Styles: ["Vintage", "Y2K", "Casual", "Formal", "Sporty", "Oversized"],
-    Types: ["Top", "Jumper", "Cardigan", "Dress","One Piece", "Jeans", "Skirt","Jacket", "Shoes", "Accessories", "Household"],
+    Types: ["Top", "Jumper", "Cardigan", "Dress", "One Piece", "Jeans", "Skirt", "Jacket", "Shoes", "Accessories", "Household"],
     Condition: ["New", "Like New", "Good", "Worn"],
   };
 
@@ -232,8 +232,15 @@ export default function UploadScreen() {
   return (
     <Screen>
       <View style={styles.container}>
-        <Text style={styles.title}>Upload an Image</Text>
-        <Button title="Pick Image" onPress={pickAndUpload} />
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Upload an Image</Text>
+         <TouchableOpacity 
+    style={styles.pickImageButton} 
+    onPress={pickAndUpload}
+  >
+    <Text style={styles.buttonText}>Pick Image</Text>
+  </TouchableOpacity>
+        </View>
 
         {imageUrl && (
           <KeyboardAwareScrollView contentContainerStyle={{ flexGrow: 1, padding: 20 }} enableOnAndroid={true}>
@@ -630,6 +637,31 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     letterSpacing: 3,
+  },
+
+  card: {
+    width: "100%",
+    borderRadius: 12,
+    backgroundColor: "#121C0C",
+    padding: 10,
+  },
+
+  cardTitle: {
+    fontSize: 20,
+    textAlign: 'center',
+    fontWeight: "700",
+    marginTop: 10,
+    padding: 10, 
+    color: "#eef2e4",
+  },
+
+  pickImageButton: {
+    backgroundColor: "#CE6674",
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 10,
+    alignItems: "center",
+    justifyContent: "center",
   },
 });
 
