@@ -56,9 +56,9 @@ export default function UploadScreen() {
 
   //Current tags
   const tagCategories = {
-    Colours: ["Black", "White", "Red", "Blue", "Green", "Pink", "Brown", "Grey"],
-    Styles: ["Vintage", "Y2K", "Casual", "Formal", "Sporty", "Oversized", "Denim"],
-    Types: ["Top", "Dress", "Jacket", "Jeans", "Skirt", "Shoes", "Bag", "Household"],
+    Colours: ["Black", "White", "Red", "Blue", "Green", "Pink", "Brown", "Grey", "Yellow", "Multicoloured"],
+    Styles: ["Vintage", "Y2K", "Casual", "Formal", "Sporty", "Oversized"],
+    Types: ["Top", "Jumper", "Cardigan", "Dress", "Jeans", "Skirt","Jacket", "Shoes", "Accessories", "Household"],
     Condition: ["New", "Like New", "Good", "Worn"],
   };
 
