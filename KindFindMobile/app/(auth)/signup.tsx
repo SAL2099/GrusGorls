@@ -7,6 +7,7 @@ import * as Location from "expo-location"; // Import Expo location for getting t
 import { Dropdown } from "react-native-element-dropdown"; // Dropdown component for selecting nearby shops
 import { fetchOsmShops } from "../../lib/osmService"; // Function to fetch nearby charity shops
 import { validatePassword, getPasswordRequirements } from "../../lib/validation";
+import { Ionicons } from "@expo/vector-icons"; //Icon
 
 // The SignUpScreen component allows users to create a new account, either as a regular user or a store owner, and handles the sign-up logic
 export default function SignUpScreen() {
@@ -28,6 +29,9 @@ export default function SignUpScreen() {
     // Refs for keyboard navigation
     const passwordRef = useRef<TextInput>(null);
     const displayNameRef = useRef<TextInput>(null);
+
+    //Password
+    const [showPassword, setShowPassword] = useState(false);
 
     // Load nearby shops when the store role is selected
     useEffect(() => {
@@ -246,17 +250,29 @@ export default function SignUpScreen() {
                             onSubmitEditing={() => passwordRef.current?.focus()}
                         />
 
-                        <TextInput
-                            ref={passwordRef}
-                            placeholder="Password"
-                            placeholderTextColor="#A7A7A7"
-                            secureTextEntry
-                            style={styles.input}
-                            value={password}
-                            onChangeText={setPassword}
-                            returnKeyType="next"
-                            onSubmitEditing={() => displayNameRef.current?.focus()}
-                        />
+                        <View style={styles.passwordContainer}>
+                            <TextInput
+                                ref={passwordRef}
+                                placeholder="Password"
+                                placeholderTextColor="#A7A7A7"
+                                secureTextEntry={!showPassword} 
+                                style={[styles.Passwordinput, { flex: 1, marginBottom: 0 }]} 
+                                value={password}
+                                onChangeText={setPassword}
+                                returnKeyType="next"
+                                onSubmitEditing={() => displayNameRef.current?.focus()}
+                            />
+                            <Pressable
+                                onPress={() => setShowPassword(!showPassword)}
+                                style={styles.eyeIcon}
+                            >
+                                <Ionicons
+                                    name={showPassword ? "eye-off-outline" : "eye-outline"}
+                                    size={20}
+                                    color="#A7A7A7"
+                                />
+                            </Pressable>
+                        </View>
 
                         {/*Password checklist */}
                         {password.length > 0 && (
@@ -425,7 +441,7 @@ const styles = StyleSheet.create({
         textAlign: "center"
     },
 
-    //password checklist
+    //password styles
     requirementContainer: {
         marginBottom: 15,
         paddingHorizontal: 10,
@@ -433,6 +449,28 @@ const styles = StyleSheet.create({
     requirementText: {
         fontSize: 12,
         marginBottom: 4,
-        fontFamily: 'System', 
+        fontFamily: 'System',
+    },
+
+    Passwordinput: {
+        paddingHorizontal: 12,
+        paddingVertical: 12,
+        color: "#fff",
+    },
+
+    passwordContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: "#121C0C", 
+        borderRadius: 12,
+        marginBottom: 10, 
+        height: 50, 
+        overflow: 'hidden',
+    },
+    eyeIcon: {
+        paddingHorizontal: 15,
+        justifyContent: 'center',
+        alignItems: 'center',
+        height: '100%',
     },
 });

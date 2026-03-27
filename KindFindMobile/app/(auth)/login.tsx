@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react"; // Import necessary hooks from React for managing state and refs
-import {View, Text, TextInput, Pressable, StyleSheet, Alert, Image, ScrollView, KeyboardAvoidingView, Platform,} from "react-native";
+import { View, Text, TextInput, Pressable, StyleSheet, Alert, Image, ScrollView, KeyboardAvoidingView, Platform, } from "react-native";
 import { router } from "expo-router"; // Import the router from expo-router for navigation between screens
 import Screen from "../../components/Screen"; // Import a custom Screen component for consistent styling and layout across screens
 import { supabase } from "../../lib/supabase";
@@ -23,13 +23,13 @@ export default function LoginScreen() {
         setLoading(true);
         try {
             const { data: authData, error } = await supabase.auth.signInWithPassword({ email, password });
-            
+
             if (error) throw error;
 
             const user = authData.user;
             if (!user) throw new Error("No user returned");
 
-            const {data: profile, error: profileError } = await supabase
+            const { data: profile, error: profileError } = await supabase
                 .from("profiles")
                 .select("role")
                 .eq("id", user.id)
@@ -49,6 +49,26 @@ export default function LoginScreen() {
             Alert.alert("Login failed", e?.message ?? "Try again");
         } finally {
             setLoading(false);
+        }
+    }
+
+    async function handleForgotPassword() {
+        if (!email) {
+            Alert.alert("Email required", "Please enter your email address first to reset your password.");
+            return;
+        }
+
+        try {
+            const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                // This is where the user is sent after clicking the email link
+                redirectTo: 'your-app-scheme://reset-password',
+            });
+
+            if (error) throw error;
+
+            Alert.alert("Check your email", "A password reset link has been sent to your inbox.");
+        } catch (e: any) {
+            Alert.alert("Error", e.message || "Could not send reset email.");
         }
     }
 
@@ -82,7 +102,6 @@ export default function LoginScreen() {
                             onChangeText={setEmail}
                             returnKeyType="next"
                             onSubmitEditing={() => passwordRef.current?.focus()}
-                            blurOnSubmit={false}
                         />
 
                         <TextInput
@@ -96,6 +115,14 @@ export default function LoginScreen() {
                             returnKeyType="done"
                             onSubmitEditing={login}
                         />
+
+                        {/* Forgot Password Link */}
+                        <Pressable
+                            onPress={handleForgotPassword}
+                            style={styles.forgotPasswordContainer}
+                        >
+                            <Text style={styles.forgotPasswordText}>Forgot password?</Text>
+                        </Pressable>
 
                         <Pressable style={styles.button} onPress={login} disabled={loading}>
                             <Text style={styles.buttonText}>
@@ -128,11 +155,11 @@ const styles = StyleSheet.create({
         paddingBottom: 20,
     },
 
-    title: { 
-        color: "#fff", 
-        fontSize: 22, 
-        fontWeight: "900", 
-        marginBottom: 14 
+    title: {
+        color: "#fff",
+        fontSize: 22,
+        fontWeight: "900",
+        marginBottom: 14
     },
 
     // Style for the input fields, with a dark background, rounded corners, and white text
@@ -155,11 +182,11 @@ const styles = StyleSheet.create({
     },
     buttonText: { color: "#fff", fontWeight: "900" },
 
-    link: { 
-        color: "#fff", 
-        opacity: 0.8, 
-        marginTop: 14, 
-        textAlign: "center" 
+    link: {
+        color: "#fff",
+        opacity: 0.8,
+        marginTop: 14,
+        textAlign: "center"
     },
 
     // Style for the logo image at the top of the login screen, centered with rounded corners
@@ -169,6 +196,19 @@ const styles = StyleSheet.create({
         alignSelf: "center",
         borderRadius: 10,
         marginBottom: 30,
+    },
+
+    //forgot password
+    forgotPasswordContainer: {
+        alignSelf: 'flex-end',
+        marginBottom: 20,
+        marginTop: -4, 
+    },
+    forgotPasswordText: {
+        color: "#fff",
+        fontSize: 13,
+        opacity: 0.7,
+        fontWeight: "600",
     },
 });
 

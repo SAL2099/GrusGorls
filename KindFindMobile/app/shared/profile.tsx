@@ -6,6 +6,8 @@ import { useRouter } from "expo-router";
 import { useIsFocused } from "@react-navigation/native";
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { validatePassword, getPasswordRequirements } from "../../lib/validation";
+import { Ionicons } from "@expo/vector-icons"; //Icon
+
 
 const screenWidth = Dimensions.get("window").width;
 const horizontalPadding = 32; // container padding: 16 left + 16 right
@@ -30,9 +32,10 @@ export default function ProfileScreen() {
   const [openingTimes, setOpeningTimes] = useState("");
   const [address, setAddress] = useState("");
 
-  //Update Password
+  //Passwords
   const [newPassword, setNewPassword] = useState("");
   const [changingPassword, setChangingPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   //reservation stuff
   const [reservations, setReservations] = useState<any[]>([]);
@@ -266,31 +269,42 @@ export default function ProfileScreen() {
                     ) : (
                       <View style={{ marginTop: 10 }}>
                         <Text style={styles.label}>New Password</Text>
-                        <TextInput
-                          value={newPassword}
-                          onChangeText={setNewPassword}
-                          style={styles.input}
-                          placeholder="Enter new password"
-                          placeholderTextColor="#A7A7A7" // Changed from FFF for better visibility
-                          secureTextEntry
-                        />
-
+                        <View style={styles.passwordContainer}>
+                          <TextInput
+                            value={newPassword}
+                            onChangeText={setNewPassword}
+                            style={[styles.Passwordinput, { backgroundColor: 'transparent' }]}
+                            placeholder="Enter new password"
+                            placeholderTextColor="#A7A7A7"
+                            secureTextEntry={!showPassword}
+                          />
+                          <Pressable
+                            onPress={() => setShowPassword(!showPassword)}
+                            style={styles.eyeIcon}
+                          >
+                            <Ionicons
+                              name={showPassword ? "eye-off-outline" : "eye-outline"}
+                              size={20}
+                              color="#A7A7A7"
+                            />
+                          </Pressable>
+                        </View>
                         {/* --- ADD THE CHECKLIST HERE --- */}
-                        {newPassword.length > 0 && (
-                          <View style={styles.requirementContainer}>
-                            {getPasswordRequirements(newPassword).map((req, index) => (
-                              <Text
-                                key={index}
-                                style={[
-                                  styles.requirementText,
-                                  { color: req.fulfilled ? "#4CAF50" : "#A7A7A7" }
-                                ]}
-                              >
-                                {req.fulfilled ? "✓" : "○"} {req.label}
-                              </Text>
-                            ))}
-                          </View>
-                        )}
+                          {newPassword.length > 0 && (
+                            <View style={styles.requirementContainer}>
+                              {getPasswordRequirements(newPassword).map((req, index) => (
+                                <Text
+                                  key={index}
+                                  style={[
+                                    styles.requirementText,
+                                    { color: req.fulfilled ? "#4CAF50" : "#A7A7A7" }
+                                  ]}
+                                >
+                                  {req.fulfilled ? "✓" : "○"} {req.label}
+                                </Text>
+                              ))}
+                            </View>
+                          )}
 
                         <View style={{ flexDirection: 'row', gap: 8 }}>
                           <Pressable
@@ -690,7 +704,7 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
 
-  //password checklist 
+  //password styles 
   requirementContainer: {
     marginBottom: 15,
     paddingHorizontal: 5,
@@ -698,6 +712,27 @@ const styles = StyleSheet.create({
   requirementText: {
     fontSize: 12,
     marginBottom: 4,
+  },
+
+  passwordContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: "rgba(255,255,255,0.08)", 
+    borderRadius: 12,
+    marginBottom: 15,
+  },
+
+  Passwordinput: {
+    flex: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    color: "#fff",
+  },
+
+  eyeIcon: {
+    paddingRight: 15, 
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 
