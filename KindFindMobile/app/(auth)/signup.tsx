@@ -179,7 +179,7 @@ export default function SignUpScreen() {
             }
 
             //Only happens if a store signs up
-            router.replace(role === "store" ? "/(store)" : "/(tabs)");
+            router.replace(role === "store" ? "/(store)/tabs" : "/(tabs)");
 
         } catch (e: any) {
             Alert.alert("Sign up failed", e?.message ?? "An error occurred");

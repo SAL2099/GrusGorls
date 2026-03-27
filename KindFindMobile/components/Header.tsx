@@ -4,19 +4,17 @@ export default function Header() { // The Header component displays the app's lo
   return ( 
     <View style={styles.header}> 
       <Image 
-        source={require('../assets/images/Logo2.jpg')}  //Replace with Logo2 or Logo3 if you want to test those
-        style={styles.image} 
+        source={require('../assets/images/KindFindWriting.png')} 
+        style={styles.TextLogo}
       /> 
-      <Text style={styles.title}>KindFind</Text> 
     </View> 
   ); 
 }
 
 // Define styles for the Header
 const styles = StyleSheet.create({
-
   header: {
-    height: 125,
+    height: 100,
     backgroundColor: '#121C0C',
     flexDirection: 'row', 
     alignItems: 'center', 
@@ -25,18 +23,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
   },
 
-  image: {
-    width: 60,
-    height: 60,
-    position: 'absolute', 
-    left: 15,            
-    top: 40,             
-    borderRadius: 10,
-  },
-
   title: {
     color: '#CE6674',
     fontSize: 24,
     fontWeight: '700',
   },
+
+  TextLogo: {
+    width: 200,
+    height: 75,
+    left: 15,  
+    top: 5,                      
+    borderRadius: 10,
+  }
 });
