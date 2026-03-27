@@ -74,6 +74,7 @@ export default function ProfileScreen() {
       .from("photos")
       .select("*")
       .eq("user_id", user.id)
+      .is("collected_at", null)
       .order("created_at", { ascending: false });
 
     if (photoError) {
@@ -89,6 +90,7 @@ export default function ProfileScreen() {
         .from("photos")
         .select("*")
         .eq("store_id", data.store_id)
+        .is("collected_at", null)
         .order("created_at", { ascending: false });
 
 
