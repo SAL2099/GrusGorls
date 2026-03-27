@@ -5,6 +5,7 @@ import { supabase } from "../../lib/supabase"; //Import supabase client for auth
 import { useRouter } from "expo-router";
 import { useIsFocused } from "@react-navigation/native";
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import { validatePassword, getPasswordRequirements } from "../../lib/validation";
 
 const screenWidth = Dimensions.get("window").width;
 const horizontalPadding = 32; // container padding: 16 left + 16 right
@@ -157,10 +158,16 @@ export default function ProfileScreen() {
     await loadProfile();
   }
 
-  //Function to update password
+
+  // Function to update password
   async function handleUpdatePassword() {
-    if (newPassword.length < 6) {
-      Alert.alert("Invalid Password", "Password must be at least 6 characters.");
+    const validation = validatePassword(newPassword);
+
+    if (!validation.isValid) {
+      Alert.alert(
+        "Invalid Password",
+        validation.error
+      );
       return;
     }
 
@@ -264,9 +271,27 @@ export default function ProfileScreen() {
                           onChangeText={setNewPassword}
                           style={styles.input}
                           placeholder="Enter new password"
-                          placeholderTextColor="FFF"
-                          secureTextEntry // Hides the characters
+                          placeholderTextColor="#A7A7A7" // Changed from FFF for better visibility
+                          secureTextEntry
                         />
+
+                        {/* --- ADD THE CHECKLIST HERE --- */}
+                        {newPassword.length > 0 && (
+                          <View style={styles.requirementContainer}>
+                            {getPasswordRequirements(newPassword).map((req, index) => (
+                              <Text
+                                key={index}
+                                style={[
+                                  styles.requirementText,
+                                  { color: req.fulfilled ? "#4CAF50" : "#A7A7A7" }
+                                ]}
+                              >
+                                {req.fulfilled ? "✓" : "○"} {req.label}
+                              </Text>
+                            ))}
+                          </View>
+                        )}
+
                         <View style={{ flexDirection: 'row', gap: 8 }}>
                           <Pressable
                             style={[styles.button, { flex: 1 }]}
@@ -500,7 +525,7 @@ export default function ProfileScreen() {
                   contentContainerStyle={styles.uploadGrid}
                   renderItem={({ item }) => (
                     <Pressable
-                      style={[styles.imageWrapper, { opacity: 0.9 }]} 
+                      style={[styles.imageWrapper, { opacity: 0.9 }]}
                       onPress={() => {
                         router.push({
                           pathname: "/listing/[id]",
@@ -628,6 +653,7 @@ const styles = StyleSheet.create({
     paddingBottom: 20, // Adds space at the bottom so you can click the next field
   },
 
+  //reserved codes
   reservedBadge: {
     position: 'absolute',
     bottom: 0,
@@ -643,6 +669,7 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
 
+  //collected styles
   collectedBadge: {
     position: 'absolute',
     top: 0,
@@ -661,6 +688,16 @@ const styles = StyleSheet.create({
     borderColor: '#fff',
     padding: 2,
     borderRadius: 4,
+  },
+
+  //password checklist 
+  requirementContainer: {
+    marginBottom: 15,
+    paddingHorizontal: 5,
+  },
+  requirementText: {
+    fontSize: 12,
+    marginBottom: 4,
   },
 });
 

@@ -6,6 +6,7 @@ import { supabase } from "../../lib/supabase"; // Import supabase client for aut
 import * as Location from "expo-location"; // Import Expo location for getting the user's current location
 import { Dropdown } from "react-native-element-dropdown"; // Dropdown component for selecting nearby shops
 import { fetchOsmShops } from "../../lib/osmService"; // Function to fetch nearby charity shops
+import { validatePassword, getPasswordRequirements } from "../../lib/validation";
 
 // The SignUpScreen component allows users to create a new account, either as a regular user or a store owner, and handles the sign-up logic
 export default function SignUpScreen() {
@@ -110,6 +111,17 @@ export default function SignUpScreen() {
             Alert.alert("Missing info", "Please fill in all fields.");
             return;
         }
+
+        const validation = validatePassword(password);
+
+        if (!validation.isValid) {
+            Alert.alert(
+                "Weak Password",
+                validation.error
+            );
+            return;
+        }
+
         if (role === "store" && !selectedShop) {
             Alert.alert("Store missing", "Please select a store.");
             return;
@@ -127,7 +139,7 @@ export default function SignUpScreen() {
                     .eq("store_id", String(selectedShop))
                     .maybeSingle();
 
-                    console.log("Existing store result:", existingStore);
+                console.log("Existing store result:", existingStore);
 
                 if (existingStore) {
                     setLoading(false);
@@ -171,7 +183,7 @@ export default function SignUpScreen() {
 
                 //Sign them out if another account is registered
                 await supabase.auth.signOut();
-                
+
                 if (profileError.code === "23505") {
                     throw new Error("This store was has been registered by another user.");
                 }
@@ -245,6 +257,23 @@ export default function SignUpScreen() {
                             returnKeyType="next"
                             onSubmitEditing={() => displayNameRef.current?.focus()}
                         />
+
+                        {/*Password checklist */}
+                        {password.length > 0 && (
+                            <View style={styles.requirementContainer}>
+                                {getPasswordRequirements(password).map((req, index) => (
+                                    <Text
+                                        key={index}
+                                        style={[
+                                            styles.requirementText,
+                                            { color: req.fulfilled ? "#4CAF50" : "#A7A7A7" }
+                                        ]}
+                                    >
+                                        {req.fulfilled ? "✓" : "○"} {req.label}
+                                    </Text>
+                                ))}
+                            </View>
+                        )}
 
                         <TextInput
                             ref={displayNameRef}
@@ -394,5 +423,16 @@ const styles = StyleSheet.create({
         opacity: 0.8,
         marginTop: 14,
         textAlign: "center"
+    },
+
+    //password checklist
+    requirementContainer: {
+        marginBottom: 15,
+        paddingHorizontal: 10,
+    },
+    requirementText: {
+        fontSize: 12,
+        marginBottom: 4,
+        fontFamily: 'System', 
     },
 });

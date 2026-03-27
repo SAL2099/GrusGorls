@@ -14,13 +14,13 @@ The repository for Gru's Gorls CM3141 coursework
    npm install 
 
 4. Start Expo:
-   npx expo start 
+   npx expo start (normal wifi)
+   n
+
 
 5. Run on a device:
-   Scan the QR code with Expo Go (Android)
-   Scan with the Camera app (iOS)
-
-   Or press:
-   w for web preview
+   Download the Expo Go app:
+      Scan the QR code with Expo Go (Android)
+      Scan with the Camera app (iOS)
 
 
