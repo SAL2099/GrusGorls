@@ -63,7 +63,7 @@ export default function ItemCard({
         })}
       </View>
 
-      <Text style={styles.cardPrice}>£{item.price}</Text>
+      <Text style={styles.cardPrice}>£{item.price.toFixed(2)}</Text>
       
       <Text style={styles.cardMeta} numberOfLines={1}>
         Size: {item.size}
