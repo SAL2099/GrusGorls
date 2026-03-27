@@ -108,101 +108,83 @@ export default function SignUpScreen() {
 
 
 
-    // Function to handle the sign-up process
-    async function signUp() {
-        // Ensures fields are filled
-        if (!email || !password || !displayName.trim()) {
-            Alert.alert("Missing info", "Please fill in all fields.");
-            return;
-        }
-
-        const validation = validatePassword(password);
-
-        if (!validation.isValid) {
-            Alert.alert(
-                "Weak Password",
-                validation.error
-            );
-            return;
-        }
-
-        if (role === "store" && !selectedShop) {
-            Alert.alert("Store missing", "Please select a store.");
-            return;
-        }
-
-        setLoading(true);
-
-        try {
-            // Check profiles to ensure a store isn't making two accounts
-            if (role === "store") {
-                console.log("Selected shop:", selectedShop);
-                const { data: existingStore } = await supabase
-                    .from("profiles")
-                    .select("id")
-                    .eq("store_id", String(selectedShop))
-                    .maybeSingle();
-
-                console.log("Existing store result:", existingStore);
-
-                if (existingStore) {
-                    setLoading(false);
-                    return Alert.alert("Taken", "This store is already registered.");
-                }
-            }
-
-            // Create authAccount
-            const { data: authData, error: authError } = await supabase.auth.signUp({
-                email,
-                password,
-            });
-
-            if (authError) {
-                setLoading(false);
-                return Alert.alert("Sign up failed", authError.message);
-            }
-
-            const userId = authData.user?.id;
-
-            // This is turned off for now but the code is here for when we turn on email confirm
-            if (!userId) {
-                Alert.alert("Verify Email", "Please check your inbox to confirm your account.");
-                router.replace("/(auth)/login");
-                return;
-            }
-
-            // Create profile
-            const { error: profileError } = await supabase.from("profiles").insert([{
-                id: userId,
-                role,
-                display_name: displayName.trim(),
-                store_id: role === "store" ? String(selectedShop) : null,
-                store_name: role === "store" ? storeName.trim() : null,
-                opening_times: role === "store" ? openingTimes.trim() : null,
-                address: role === "store" ? address.trim() : null,
-            }]);
-
-            if (profileError) {
-                console.log("PROFILE ERROR: ", profileError);
-
-                //Sign them out if another account is registered
-                await supabase.auth.signOut();
-
-                if (profileError.code === "23505") {
-                    throw new Error("This store was has been registered by another user.");
-                }
-                throw profileError;
-            }
-
-            //Only happens if a store signs up
-            router.replace(role === "store" ? "/(store)/tabs" : "/(tabs)");
-
-        } catch (e: any) {
-            Alert.alert("Sign up failed", e?.message ?? "An error occurred");
-        } finally {
-            setLoading(false);
-        }
+async function signUp() {
+    if (!email || !password || !displayName.trim()) {
+        Alert.alert("Missing info", "Please fill in all fields.");
+        return;
     }
+
+    const validation = validatePassword(password);
+    if (!validation.isValid) {
+        Alert.alert("Weak Password", validation.error);
+        return;
+    }
+
+    if (role === "store" && !selectedShop) {
+        Alert.alert("Store missing", "Please select a store.");
+        return;
+    }
+
+    setLoading(true);
+
+    try {
+        if (role === "store") {
+            const { data: existingStore } = await supabase
+                .from("profiles")
+                .select("id")
+                .eq("store_id", String(selectedShop))
+                .maybeSingle();
+
+            if (existingStore) {
+                setLoading(false);
+                return Alert.alert("Taken", "This store is already registered.");
+            }
+        }
+
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+            email,
+            password,
+        });
+
+        if (authError) throw authError;
+
+        const userId = authData.user?.id;
+
+        if (!userId) {
+            Alert.alert("Verify Email", "Please check your inbox to confirm your account.");
+            router.replace("/(auth)/login");
+            return;
+        }
+
+        const { error: profileError } = await supabase.from("profiles").insert([{
+            id: userId,
+            role,
+            display_name: displayName.trim(),
+            store_id: role === "store" ? String(selectedShop) : null,
+            store_name: role === "store" ? storeName.trim() : null,
+            opening_times: role === "store" ? openingTimes.trim() : null,
+            address: role === "store" ? address.trim() : null,
+        }]);
+
+        if (profileError) {
+            console.log("PROFILE ERROR: ", profileError);
+            
+            await supabase.auth.signOut();
+            
+            if (profileError.code === "23505") {
+                throw new Error("This store has been registered by another user.");
+            }
+            throw profileError;
+        }
+
+        router.replace(role === "store" ? "/(store)/tabs" : "/(tabs)");
+
+    } catch (e: any) {
+        Alert.alert("Sign up failed", e?.message ?? "An error occurred");
+    } finally {
+        setLoading(false);
+    }
+}
 
     // Render the sign-up form with inputs for email, password, display name, and additional store info if the store role is selected
     return (

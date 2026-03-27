@@ -39,12 +39,15 @@ export default function RootLayout() {
     if (!ready) return;
 
     const inAuthGroup = segments[0] === "(auth)";
+    const isResettingPassword = (segments as string[]).includes("reset-password");
 
     if (!signedIn && !inAuthGroup) {
       router.replace("/(auth)/login");
-    } else if (signedIn && inAuthGroup) {
+    } else if (signedIn && inAuthGroup && !isResettingPassword) {
       router.replace("/(tabs)");
     }
+    // If they are not signed in BUT they are on the reset-password screen, 
+    // we do nothing and let the screen stay open!
   }, [signedIn, ready, segments]);
 
   if (!ready) return null;

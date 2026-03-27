@@ -54,21 +54,28 @@ export default function LoginScreen() {
 
     async function handleForgotPassword() {
         if (!email) {
-            Alert.alert("Email required", "Please enter your email address first to reset your password.");
+            Alert.alert("Email required", "Please enter your email address to receive a reset code.");
             return;
         }
 
+        setLoading(true);
         try {
-            const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                // This is where the user is sent after clicking the email link
-                redirectTo: 'your-app-scheme://reset-password',
-            });
+            // This sends a 6-digit code to the user's email
+            const { error } = await supabase.auth.resetPasswordForEmail(email);
 
             if (error) throw error;
 
-            Alert.alert("Check your email", "A password reset link has been sent to your inbox.");
+            Alert.alert("Code Sent", "Check your inbox for a 6-digit verification code.");
+
+            // Navigate to reset screen and pass the email so the user doesn't have to type it again
+            router.push({
+                pathname: "/(auth)/reset-password",
+                params: { email: email }
+            });
         } catch (e: any) {
-            Alert.alert("Error", e.message || "Could not send reset email.");
+            Alert.alert("Error", e.message);
+        } finally {
+            setLoading(false);
         }
     }
 
@@ -202,7 +209,7 @@ const styles = StyleSheet.create({
     forgotPasswordContainer: {
         alignSelf: 'flex-end',
         marginBottom: 20,
-        marginTop: -4, 
+        marginTop: -4,
     },
     forgotPasswordText: {
         color: "#fff",
