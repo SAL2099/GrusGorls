@@ -6,6 +6,8 @@ export type Photo = {
   image_url: string;
   title: string;
   price: number;
+  size: number;
+  location: string;
   tags: string[];
   reserved_at?: string | null;
 };
@@ -30,16 +32,6 @@ export default function ItemCard({
       <Image source={{ uri: item.image_url }} style={styles.cardImage} />
 
       <Text style={styles.cardTitle}>{item.title}</Text>
-      <Text style={styles.cardPrice}>£{item.price}</Text>
-
-      {showReservedInfo && item.reserved_at && (
-        <View style={styles.reservedRow}>
-          <Ionicons name="time" size={14} color="#777" />
-          <Text style={styles.reservedText}>
-            {new Date(item.reserved_at).toLocaleString()}
-          </Text>
-        </View>
-      )}
 
       <View style={styles.tagRow}>
         {item.tags?.slice(0, 3).map((tag, index) => {
@@ -70,6 +62,25 @@ export default function ItemCard({
           );
         })}
       </View>
+
+      <Text style={styles.cardPrice}>£{item.price}</Text>
+      
+      <Text style={styles.cardMeta} numberOfLines={1}>
+        Size: {item.size}
+      </Text>
+
+      <Text style={styles.cardMeta} numberOfLines={1}>
+        {item.location}
+      </Text>
+
+      {showReservedInfo && item.reserved_at && (
+        <View style={styles.reservedRow}>
+          <Ionicons name="time" size={14} color="#777" />
+          <Text style={styles.reservedText}>
+            {new Date(item.reserved_at).toLocaleString()}
+          </Text>
+        </View>
+      )}
     </TouchableOpacity>
   );
 }
@@ -97,6 +108,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
     color: "#111",
+  },
+    cardMeta: {
+    marginTop: 4,
+    color: "#777",
+    fontSize: 12,
   },
   reservedRow: {
     flexDirection: "row",
