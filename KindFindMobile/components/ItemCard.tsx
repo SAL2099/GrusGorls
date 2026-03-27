@@ -89,7 +89,7 @@ const styles = StyleSheet.create({
   card: {
     width: "48%",
     borderRadius: 12,
-    backgroundColor: "#fff",
+    backgroundColor: "#eef2e4",
     padding: 10,
   },
   cardImage: {
@@ -131,7 +131,6 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   tagChip: {
-    backgroundColor: "#fff",
     borderRadius: 20,
     paddingHorizontal: 8,
     paddingVertical: 4,
