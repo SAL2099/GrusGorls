@@ -15,7 +15,7 @@ The repository for Gru's Gorls CM3141 coursework
 
 4. Start Expo:
    npx expo start (normal wifi)
-   n
+   npx expo start --tunnel (edumroam)
 
 
 5. Run on a device:
