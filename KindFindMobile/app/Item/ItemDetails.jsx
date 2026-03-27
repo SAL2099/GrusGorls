@@ -117,7 +117,6 @@ export default function ItemDetails() {
       .from("photos")
       .update({
         reserved: false,
-        reserved_by: null,
         reserved_at: null,
         reservation_number: null,
         collected_at: new Date().toISOString()

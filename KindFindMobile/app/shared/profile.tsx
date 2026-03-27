@@ -33,6 +33,10 @@ export default function ProfileScreen() {
   const [newPassword, setNewPassword] = useState("");
   const [changingPassword, setChangingPassword] = useState(false);
 
+  //reservation stuff
+  const [reservations, setReservations] = useState<any[]>([]);
+  const [pastReservations, setPastReservations] = useState<any[]>([]);
+
   // Function to load the user's profile data from the database
   async function loadProfile() {
     setLoading(true);
@@ -80,7 +84,6 @@ export default function ProfileScreen() {
     }
 
     // Fetch all photos associated with this shop's address
-    // We check against the data object directly rather than a component-wide constant
     if (data.role === "store" && data.store_name && data.address) {
       const { data: shopData } = await supabase
         .from("photos")
@@ -92,6 +95,28 @@ export default function ProfileScreen() {
       setShopUploads(shopData ?? []);
     } else {
       setShopUploads([]);
+    }
+    const { data: resData, error: resError } = await supabase
+      .from("photos")
+      .select("*")
+      .eq("reserved_by", user.id)
+      .eq("reserved", true) // Only show active reservations
+      .order("reserved_at", { ascending: false });
+
+    if (!resError) {
+      setReservations(resData ?? []);
+    }
+
+    // Fetch Past Reservations (where collected_at is NOT null)
+    const { data: pastData, error: pastError } = await supabase
+      .from("photos")
+      .select("*")
+      .eq("reserved_by", user.id)
+      .not("collected_at", "is", null) // This filters for collected items
+      .order("collected_at", { ascending: false });
+
+    if (!pastError) {
+      setPastReservations(pastData ?? []);
     }
 
     setLoading(false);
@@ -179,7 +204,6 @@ export default function ProfileScreen() {
     return (
       <Screen>
         <View style={styles.container}>
-          <Text style={styles.title}>Profile</Text>
           <Text style={styles.sub}>No profile found.</Text>
         </View>
       </Screen>
@@ -198,8 +222,6 @@ export default function ProfileScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.container}>
-          <Text style={styles.title}>Profile</Text>
-
           <View style={styles.card}>
             <Text style={styles.sub}>Account type: {isStore ? "Store" : "User"}</Text>
 
@@ -415,6 +437,88 @@ export default function ProfileScreen() {
               )}
             </View>
           )}
+
+          {/* Current Reservations Section */}
+          {!isStore && !editing && (
+            <View style={styles.card}>
+              <Text style={styles.sectionTitle}>My Reservations</Text>
+
+              {reservations.length === 0 ? (
+                <Text style={styles.sub}>You have no active reservations.</Text>
+              ) : (
+                <FlatList<any>
+                  data={reservations}
+                  keyExtractor={(item) => item.id.toString()}
+                  numColumns={3}
+                  scrollEnabled={false}
+                  columnWrapperStyle={styles.uploadRow}
+                  contentContainerStyle={styles.uploadGrid}
+                  renderItem={({ item }) => (
+                    <Pressable
+                      style={styles.imageWrapper}
+                      onPress={() => {
+                        router.push({
+                          pathname: "/listing/[id]",
+                          params: {
+                            id: item.id,
+                            item: JSON.stringify(item)
+                          }
+                        });
+                      }}
+                    >
+                      <Image
+                        source={{ uri: item.image_url }}
+                        style={styles.uploadImage}
+                      />
+                      {/* Visual indicator that it's reserved */}
+                      <View style={styles.reservedBadge}>
+                        <Text style={styles.reservedBadgeText}>#{item.reservation_number}</Text>
+                      </View>
+                    </Pressable>
+                  )}
+                />
+              )}
+            </View>
+          )}
+
+          {/* Past Reservations Section */}
+          {!isStore && !editing && (
+            <View style={styles.card}>
+              <Text style={styles.sectionTitle}>Past Pickups</Text>
+
+              {pastReservations.length === 0 ? (
+                <Text style={styles.sub}>No past history yet</Text>
+              ) : (
+                <FlatList<any>
+                  data={pastReservations}
+                  keyExtractor={(item) => item.id.toString()}
+                  numColumns={3}
+                  scrollEnabled={false}
+                  columnWrapperStyle={styles.uploadRow}
+                  contentContainerStyle={styles.uploadGrid}
+                  renderItem={({ item }) => (
+                    <Pressable
+                      style={[styles.imageWrapper, { opacity: 0.9 }]} 
+                      onPress={() => {
+                        router.push({
+                          pathname: "/listing/[id]",
+                          params: { id: item.id }
+                        });
+                      }}
+                    >
+                      <Image
+                        source={{ uri: item.image_url }}
+                        style={styles.uploadImage}
+                      />
+                      <View style={styles.collectedBadge}>
+                        <Text style={styles.collectedBadgeText}>COLLECTED</Text>
+                      </View>
+                    </Pressable>
+                  )}
+                />
+              )}
+            </View>
+          )}
         </View>
       </KeyboardAwareScrollView>
     </Screen>
@@ -433,13 +537,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center"
-  },
-
-  title: {
-    color: "#fff",
-    fontSize: 22,
-    fontWeight: "900",
-    marginBottom: 12
   },
 
   // Card style for the profile information section
@@ -527,6 +624,41 @@ const styles = StyleSheet.create({
   //Makes the page scrollable 
   scrollContainer: {
     paddingBottom: 20, // Adds space at the bottom so you can click the next field
+  },
+
+  reservedBadge: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(206, 102, 116, 0.9)', // Matching your primary pink/red
+    paddingVertical: 2,
+    alignItems: 'center',
+  },
+  reservedBadgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '900',
+  },
+
+  collectedBadge: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  collectedBadgeText: {
+    color: '#fff',
+    fontSize: 8,
+    fontWeight: '900',
+    borderWidth: 1,
+    borderColor: '#fff',
+    padding: 2,
+    borderRadius: 4,
   },
 });
 

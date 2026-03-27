@@ -14,6 +14,16 @@ export default function ListingDetail() {
     const [loading, setLoading] = useState(true);
     const router = useRouter();
 
+    const [currentUser, setCurrentUser] = useState<any>(null);
+
+    useEffect(() => {
+        async function getUser() {
+            const { data } = await supabase.auth.getUser();
+            setCurrentUser(data?.user);
+        }
+        getUser();
+    }, []);
+
     // Fetch fresh data from Supabase
     useEffect(() => {
         async function fetchListing() {
@@ -90,7 +100,7 @@ export default function ListingDetail() {
             <ScrollView contentContainerStyle={styles.scrollContainer}>
                 <Pressable style={styles.backBtn} onPress={() => router.back()}>
                     <Image
-                        source={require('../../assets/images/Back Arrow.png')} 
+                        source={require('../../assets/images/Back Arrow.png')}
                         style={styles.backBtnImage}
                     />
                 </Pressable>
@@ -104,7 +114,7 @@ export default function ListingDetail() {
 
                     <Text style={styles.label}>Tags</Text>
                     <View style={styles.tagRow}>
-                        {item.tags?.map((tag:any, index:any) => (
+                        {item.tags?.map((tag: any, index: any) => (
                             <View key={index} style={styles.tagChip}>
                                 <Text style={styles.tagChipText}>{tag}</Text>
                             </View>
@@ -118,9 +128,19 @@ export default function ListingDetail() {
                     <Text style={styles.text}>{item.location}</Text>
                 </View>
 
-                <Pressable style={styles.deleteBtn} onPress={handleDelete}>
-                    <Text style={styles.buttonText}>Delete Listing</Text>
-                </Pressable>
+                {currentUser?.id === item.user_id && (
+                    <Pressable style={styles.deleteBtn} onPress={handleDelete}>
+                        <Text style={styles.buttonText}>Delete Listing</Text>
+                    </Pressable>
+                )}
+
+                {/* 2. Show RESERVATION INFO if the user is the one who reserved it */}
+                {currentUser?.id === item.reserved_by && item.reserved && (
+                    <View style={styles.reservationInfoCard}>
+                        <Text style={styles.resLabel}>Your Reservation Number:</Text>
+                        <Text style={styles.resNumber}>{item.reservation_number}</Text>
+                    </View>
+                )}
             </ScrollView>
         </Screen>
     );
@@ -234,4 +254,32 @@ const styles = StyleSheet.create({
         fontWeight: "600",
         color: "#CE6674",
     },
+
+    //reservation styles
+    reservationInfoCard: {
+        backgroundColor: "#CE6674", 
+        padding: 20,
+        marginHorizontal: 16,
+        borderRadius: 12,
+        marginTop: 10,
+        alignItems: "center"
+    },
+    resLabel: {
+        color: "#fff",
+        fontSize: 14,
+        opacity: 0.8
+    },
+    resNumber: {
+        color: "#fff",
+        fontSize: 32,
+        fontWeight: "900",
+        marginVertical: 10
+    },
+    cancelResBtn: {
+        backgroundColor: "rgba(255,255,255,0.2)",
+        padding: 10,
+        borderRadius: 8,
+        width: "100%",
+        alignItems: "center"
+    }
 });
