@@ -1,6 +1,7 @@
 import "react-native-url-polyfill/auto";
 import "react-native-get-random-values";
 import { decode as atob, encode as btoa } from "base-64";
+import { Platform } from "react-native";
 
 if (!global.atob) global.atob = atob;
 if (!global.btoa) global.btoa = btoa;
@@ -8,14 +9,22 @@ if (!global.btoa) global.btoa = btoa;
 import { Stack, useRouter, useSegments } from "expo-router";
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
-
 import * as Notifications from 'expo-notifications';
 
-// android requires a channel for scheduled notifications
-Notifications.setNotificationChannelAsync('pickup-reminders', {
-  name: 'Pickup Reminders',
-  importance: Notifications.AndroidImportance.HIGH,
+Notifications.setNotificationHandler({
+  handleNotification: async (notification) => {
+    console.log("Notification received at:", new Date().toLocaleTimeString());
+    return {
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+      shouldShowBanner: true,
+      shouldShowList: true,
+    };
+  },
 });
+
+
 
 export default function RootLayout() {
   const [ready, setReady] = useState(false);
@@ -25,6 +34,12 @@ export default function RootLayout() {
   const segments = useSegments();
 
   useEffect(() => {
+    if (Platform.OS === 'android') {
+      Notifications.setNotificationChannelAsync('pickup-reminders', {
+        name: 'Pickup Reminders',
+        importance: Notifications.AndroidImportance.HIGH,
+      });
+    }
     let mounted = true;
 
     supabase.auth.getSession().then(({ data }) => {
@@ -54,10 +69,18 @@ export default function RootLayout() {
     } else if (signedIn && inAuthGroup && !isResettingPassword) {
       router.replace("/(tabs)");
     }
-    // If they are not signed in BUT they are on the reset-password screen, 
-    // we do nothing and let the screen stay open!
   }, [signedIn, ready, segments]);
 
+  useEffect(() => {
+    const subscription = Notifications.addNotificationResponseReceivedListener(response => {
+      setTimeout(() => {
+        console.log("Redirecting to profile...");
+        router.replace("/(tabs)/profile");
+      }, 500); 
+    });
+
+    return () => subscription.remove();
+  }, []);
   if (!ready) return null;
 
   return (

@@ -84,7 +84,7 @@ export default function ItemDetails() {
   // Reserve handler (user only)
   const handleReserve = async () => {
     if (!user) return;
-
+    console.log("Notification scheduled at:", new Date().toLocaleTimeString());
     const reservationNumber = Math.floor(100000 + Math.random() * 900000);
 
     if (!parsedItem) return;
@@ -105,18 +105,25 @@ export default function ItemDetails() {
     }
 
     const granted = await ensureNotificationPermission();
-      if (granted) {
-        await Notifications.scheduleNotificationAsync({
-          content: {
+    if (granted) {
+      await Notifications.cancelAllScheduledNotificationsAsync();
+
+      await Notifications.scheduleNotificationAsync({
+        content: {
           title: "Pickup Reminder",
-          body: "Your reservation is ready for collection.",
+          body: `Your reservation for ${parsedItem.title} is ready.`,
           sound: true,
+          data: { itemId: parsedItem.id },
         },
         trigger: {
-          date: new Date(Date.now() + 20 * 1000), 
-          channelId: 'pickup-reminders',
-      },
+          type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+          seconds: 20,
+          repeats: false,
+          channelId: 'pickup-reminders', // Must be present for Android
+        },
       });
+
+      console.log("Notification scheduled for 20 seconds from now");
     }
 
     Alert.alert(
