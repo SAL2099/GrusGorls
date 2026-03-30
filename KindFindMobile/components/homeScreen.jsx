@@ -5,7 +5,6 @@ import { supabase } from "../lib/supabase";
 import { Ionicons } from "@expo/vector-icons"; //Icon
 import { useRouter } from "expo-router";
 import ItemCard from './ItemCard';
-import pushNotification from './notifications'
 
 export default function HomeScreen() { // Main component for the home screen that displays a feed of uploaded items
   const isFocused = useIsFocused();
@@ -288,11 +287,6 @@ export default function HomeScreen() { // Main component for the home screen tha
           ) : null
         }
       />  
-
-        {/* <View>
-          <pushNotification></pushNotification>
-        </View> */}
-
 
     </View>
   );

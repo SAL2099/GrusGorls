@@ -9,6 +9,14 @@ import { Stack, useRouter, useSegments } from "expo-router";
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 
+import * as Notifications from 'expo-notifications';
+
+// android requires a channel for scheduled notifications
+Notifications.setNotificationChannelAsync('pickup-reminders', {
+  name: 'Pickup Reminders',
+  importance: Notifications.AndroidImportance.HIGH,
+});
+
 export default function RootLayout() {
   const [ready, setReady] = useState(false);
   const [signedIn, setSignedIn] = useState(false);

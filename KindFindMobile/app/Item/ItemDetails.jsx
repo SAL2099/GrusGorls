@@ -3,6 +3,8 @@ import { useLocalSearchParams, useRouter, useSegments } from "expo-router";
 import { supabase } from "../../lib/supabase";
 import { useEffect, useState } from "react";
 import Screen from "../../components/Screen";
+import * as Notifications from 'expo-notifications';
+import { ensureNotificationPermission } from "../../components/notifications";
 
 export default function ItemDetails() {
   const { item, id } = useLocalSearchParams();
@@ -100,6 +102,21 @@ export default function ItemDetails() {
     if (error) {
       console.error("Error reserving item: ", error);
       return;
+    }
+
+    const granted = await ensureNotificationPermission();
+      if (granted) {
+        await Notifications.scheduleNotificationAsync({
+          content: {
+          title: "Pickup Reminder",
+          body: "Your reservation is ready for collection.",
+          sound: true,
+        },
+        trigger: {
+          date: new Date(Date.now() + 20 * 1000), 
+          channelId: 'pickup-reminders',
+      },
+      });
     }
 
     Alert.alert(
