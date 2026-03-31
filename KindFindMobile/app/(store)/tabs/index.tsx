@@ -120,21 +120,22 @@ export default function StoreHomeScreen() {
           filter: `store_id=eq.${storeProfile.store_id}`,
         },
         (payload) => {
-          console.log("Change detected!", payload);
-          
           const isNewReservation =
             payload.new.reserved === true &&
             payload.new.reservation_number &&
-            !payload.old.reservation_number; 
+            !payload.old.reservation_number;
+
+          const isNoLongerReserved =
+            payload.old.reserved === true &&
+            payload.new.reserved === false; 
 
           if (isNewReservation) {
-            console.log("New reservation detected! Triggering notification...");
             triggerStoreNotification(payload.new);
-
-            // Refresh the list locally
             setItems(current => [payload.new, ...current.filter(i => i.id !== payload.new.id)]);
+          } else if (isNoLongerReserved) {
+            // Remove it from the list instantly
+            setItems(current => current.filter(i => i.id !== payload.new.id));
           } else {
-            // Still update the item in the list for other changes (e.g. ready_for_pickup_at)
             setItems(current =>
               current.map(i => i.id === payload.new.id ? payload.new : i)
             );

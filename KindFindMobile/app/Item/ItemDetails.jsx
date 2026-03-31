@@ -119,7 +119,8 @@ export default function ItemDetails() {
         reserved: false,
         reserved_at: null,
         reservation_number: null,
-        collected_at: new Date().toISOString()
+        collected_at: new Date().toISOString(),
+        cancelled_by_store: false,
       })
       .eq("id", Number(parsedItem.id));
 
@@ -150,6 +151,56 @@ export default function ItemDetails() {
 
     Alert.alert("Success", "User has been notified to pick up the item!");
     router.back();
+  };
+
+  const handleCancelReservation = async () => {
+    Alert.alert(
+      "Cancel Reservation",
+      "Are you sure? The user will be notified and the item will return to the feed.",
+      [
+        { text: "No", style: "cancel" },
+        {
+          text: "Yes, Cancel",
+          style: "destructive",
+          onPress: async () => {
+            if (!parsedItem) return;
+
+            //Set cancelled flag FIRST while reserved_by still matches the realtime filter
+            const { error: flagError } = await supabase
+              .from("photos")
+              .update({ cancelled_by_store: true })
+              .eq("id", Number(parsedItem.id));
+
+            if (flagError) {
+              Alert.alert("Error", "Could not cancel reservation.");
+              return;
+            }
+
+            // Clear the reservation fields
+            const { error: clearError } = await supabase
+              .from("photos")
+              .update({
+                reserved: false,
+                reserved_by: null,
+                reserved_at: null,
+                reservation_number: null,
+                ready_for_pickup_at: null,
+                cancelled_by_store: false, // clean up the flag
+              })
+              .eq("id", Number(parsedItem.id));
+
+            if (clearError) {
+              Alert.alert("Error", "Could not clear reservation.");
+              return;
+            }
+
+            Alert.alert("Cancelled", "Reservation has been cancelled.", [
+              { text: "OK", onPress: () => router.replace("/(store)") }
+            ]);
+          },
+        },
+      ]
+    );
   };
 
   // Loading state
@@ -232,6 +283,13 @@ export default function ItemDetails() {
 
               <Pressable style={styles.reserveButton} onPress={handleCollected}>
                 <Text style={styles.reserveButtonText}>Mark as Collected</Text>
+              </Pressable>
+
+              <Pressable
+                style={[styles.reserveButton, { backgroundColor: "#f30678", marginTop: 10 }]}
+                onPress={handleCancelReservation}
+              >
+                <Text style={styles.reserveButtonText}>Cancel Reservation</Text>
               </Pressable>
             </View>
           )}
