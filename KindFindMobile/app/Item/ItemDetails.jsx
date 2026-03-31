@@ -3,8 +3,6 @@ import { useLocalSearchParams, useRouter, useSegments } from "expo-router";
 import { supabase } from "../../lib/supabase";
 import { useEffect, useState } from "react";
 import Screen from "../../components/Screen";
-import * as Notifications from 'expo-notifications';
-import { ensureNotificationPermission } from "../../components/notifications";
 
 export default function ItemDetails() {
   const { item, id } = useLocalSearchParams();
@@ -104,28 +102,6 @@ export default function ItemDetails() {
       return;
     }
 
-    const granted = await ensureNotificationPermission();
-    if (granted) {
-      await Notifications.cancelAllScheduledNotificationsAsync();
-
-      await Notifications.scheduleNotificationAsync({
-        content: {
-          title: "Pickup Reminder",
-          body: `Your reservation for ${parsedItem.title} is ready.`,
-          sound: true,
-          data: { itemId: parsedItem.id },
-        },
-        trigger: {
-          type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-          seconds: 20,
-          repeats: false,
-          channelId: 'pickup-reminders', // Must be present for Android
-        },
-      });
-
-      console.log("Notification scheduled for 20 seconds from now");
-    }
-
     Alert.alert(
       "Reserved!",
       `Your reservation number is ${reservationNumber}.`,
@@ -155,6 +131,25 @@ export default function ItemDetails() {
     Alert.alert("Collected", "Item marked as collected.", [
       { text: "OK", onPress: () => router.replace("/(store)") }
     ]);
+  };
+
+  const handleReadyForPickup = async () => {
+    if (!parsedItem) return;
+
+    const { error } = await supabase
+      .from("photos")
+      .update({
+        ready_for_pickup_at: new Date().toISOString(),
+      })
+      .eq("id", Number(parsedItem.id));
+
+    if (error) {
+      Alert.alert("Error", "Could not mark as ready.");
+      return;
+    }
+
+    Alert.alert("Success", "User has been notified to pick up the item!");
+    router.back();
   };
 
   // Loading state
@@ -217,6 +212,7 @@ export default function ItemDetails() {
             </Pressable>
           )}
 
+
           {/* STORE VIEW — Reservation number + Mark as collected */}
           {isStoreView && parsedItem.reserved && (
             <View style={{ marginTop: 20 }}>
@@ -224,6 +220,15 @@ export default function ItemDetails() {
               <Text style={[styles.value, { fontSize: 20, fontWeight: "700" }]}>
                 {parsedItem.reservation_number}
               </Text>
+
+              {isStoreView && parsedItem.reserved && !parsedItem.ready_for_pickup_at && (
+                <Pressable
+                  style={[styles.reserveButton, { backgroundColor: '#4CAF50' }]}
+                  onPress={handleReadyForPickup}
+                >
+                  <Text style={styles.reserveButtonText}>Ready for Pickup</Text>
+                </Pressable>
+              )}
 
               <Pressable style={styles.reserveButton} onPress={handleCollected}>
                 <Text style={styles.reserveButtonText}>Mark as Collected</Text>

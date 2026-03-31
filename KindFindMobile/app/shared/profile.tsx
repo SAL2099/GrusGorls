@@ -79,6 +79,7 @@ export default function ProfileScreen() {
       .select("*")
       .eq("user_id", user.id)
       .is("collected_at", null)
+      .is("reserved", false)
       .order("created_at", { ascending: false });
 
     if (photoError) {
@@ -95,6 +96,7 @@ export default function ProfileScreen() {
         .select("*")
         .eq("store_id", data.store_id)
         .is("collected_at", null)
+        .eq("reserved", false)
         .order("created_at", { ascending: false });
 
 
@@ -202,6 +204,16 @@ export default function ProfileScreen() {
     }
   }, [isFocused]);
 
+  const [tick, setTick] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTick((t) => t + 1); // This simple 'tick' forces the component to re-render
+    }, 60000); // 60,000ms = 1 minute
+
+    return () => clearInterval(timer);
+  }, []);
+
   // Show a loading indicator while the profile data is being fetched
   if (loading) {
     return (
@@ -289,22 +301,22 @@ export default function ProfileScreen() {
                             />
                           </Pressable>
                         </View>
-                        {/* --- ADD THE CHECKLIST HERE --- */}
-                          {newPassword.length > 0 && (
-                            <View style={styles.requirementContainer}>
-                              {getPasswordRequirements(newPassword).map((req, index) => (
-                                <Text
-                                  key={index}
-                                  style={[
-                                    styles.requirementText,
-                                    { color: req.fulfilled ? "#4CAF50" : "#A7A7A7" }
-                                  ]}
-                                >
-                                  {req.fulfilled ? "✓" : "○"} {req.label}
-                                </Text>
-                              ))}
-                            </View>
-                          )}
+                        {/* Password checklist*/}
+                        {newPassword.length > 0 && (
+                          <View style={styles.requirementContainer}>
+                            {getPasswordRequirements(newPassword).map((req, index) => (
+                              <Text
+                                key={index}
+                                style={[
+                                  styles.requirementText,
+                                  { color: req.fulfilled ? "#4CAF50" : "#A7A7A7" }
+                                ]}
+                              >
+                                {req.fulfilled ? "✓" : "○"} {req.label}
+                              </Text>
+                            ))}
+                          </View>
+                        )}
 
                         <View style={{ flexDirection: 'row', gap: 8 }}>
                           <Pressable
@@ -494,34 +506,46 @@ export default function ProfileScreen() {
                   scrollEnabled={false}
                   columnWrapperStyle={styles.uploadRow}
                   contentContainerStyle={styles.uploadGrid}
-                  renderItem={({ item }) => (
-                    <Pressable
-                      style={styles.imageWrapper}
-                      onPress={() => {
-                        router.push({
-                          pathname: "/listing/[id]",
-                          params: {
-                            id: item.id,
-                            item: JSON.stringify(item)
-                          }
-                        });
-                      }}
-                    >
-                      <Image
-                        source={{ uri: item.image_url }}
-                        style={styles.uploadImage}
-                      />
-                      {/* Visual indicator that it's reserved */}
-                      <View style={styles.reservedBadge}>
-                        <Text style={styles.reservedBadgeText}>#{item.reservation_number}</Text>
-                      </View>
-                    </Pressable>
-                  )}
+                  renderItem={({ item }) => {
+                    // 1. Logic goes here inside curly braces
+                    const timeLeft = getRemainingTime(item.ready_for_pickup_at);
+
+                    // 2. Explicitly return the JSX
+                    return (
+                      <Pressable
+                        style={styles.imageWrapper}
+                        onPress={() => {
+                          router.push({
+                            pathname: "/listing/[id]",
+                            params: {
+                              id: item.id,
+                              item: JSON.stringify(item),
+                            },
+                          });
+                        }}
+                      >
+                        <Image
+                          source={{ uri: item.image_url }}
+                          style={styles.uploadImage}
+                        />
+
+                        {/* If it's ready for pickup, show the TIMER (Green). Otherwise show the ID (Red) */}
+                        {item.ready_for_pickup_at ? (
+                          <View style={[styles.reservedBadge, { backgroundColor: '#4CAF50' }]}>
+                            <Text style={styles.reservedBadgeText}>{timeLeft}</Text>
+                          </View>
+                        ) : (
+                          <View style={styles.reservedBadge}>
+                            <Text style={styles.reservedBadgeText}>#{item.reservation_number}</Text>
+                          </View>
+                        )}
+                      </Pressable>
+                    );
+                  }}
                 />
               )}
             </View>
           )}
-
           {/* Past Reservations Section */}
           {!isStore && !editing && (
             <View style={styles.card}>
@@ -565,6 +589,23 @@ export default function ProfileScreen() {
     </Screen>
   );
 }
+
+const getRemainingTime = (readyAt: any) => {
+  if (!readyAt) return null;
+
+  const expiryDate = new Date(readyAt);
+  expiryDate.setHours(expiryDate.getHours() + 48);
+
+  const now = new Date();
+  const diff = expiryDate.getTime() - now.getTime();
+
+  if (diff <= 0) return "Expired";
+
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+  return `${hours}h ${minutes}m left`;
+};
 
 // Define styles for the ProfileScreen component using StyleSheet
 const styles = StyleSheet.create({
@@ -717,7 +758,7 @@ const styles = StyleSheet.create({
   passwordContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: "rgba(255,255,255,0.08)", 
+    backgroundColor: "rgba(255,255,255,0.08)",
     borderRadius: 12,
     marginBottom: 15,
   },
@@ -730,7 +771,7 @@ const styles = StyleSheet.create({
   },
 
   eyeIcon: {
-    paddingRight: 15, 
+    paddingRight: 15,
     justifyContent: 'center',
     alignItems: 'center',
   },

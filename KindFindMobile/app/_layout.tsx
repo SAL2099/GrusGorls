@@ -59,6 +59,51 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
+    let channel: any = null;
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      // Clean up previous channel whenever auth state changes
+      if (channel) {
+        supabase.removeChannel(channel);
+        channel = null;
+      }
+
+      if (session?.user) {
+        channel = supabase
+          .channel(`user-pickup-${session.user.id}`)
+          .on(
+            'postgres_changes',
+            {
+              event: 'UPDATE',
+              schema: 'public',
+              table: 'photos',
+              filter: `reserved_by=eq.${session.user.id}`,
+            },
+            (payload) => {
+              const isNowReady = payload.new.ready_for_pickup_at && !payload.old.ready_for_pickup_at;
+              if (isNowReady) {
+                Notifications.scheduleNotificationAsync({
+                  content: {
+                    title: "Ready for Pickup! 🎁",
+                    body: `Your item "${payload.new.title}" is ready. You have 48 hours!`,
+                    sound: true,
+                  },
+                  trigger: null,
+                });
+              }
+            }
+          )
+          .subscribe();
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+      if (channel) supabase.removeChannel(channel);
+    };
+  }, []);
+
+  useEffect(() => {
     if (!ready) return;
 
     const inAuthGroup = segments[0] === "(auth)";
@@ -76,7 +121,7 @@ export default function RootLayout() {
       setTimeout(() => {
         console.log("Redirecting to profile...");
         router.replace("/(tabs)/profile");
-      }, 500); 
+      }, 500);
     });
 
     return () => subscription.remove();
@@ -86,4 +131,6 @@ export default function RootLayout() {
   return (
     <Stack screenOptions={{ headerShown: false }} />
   );
+
+
 }

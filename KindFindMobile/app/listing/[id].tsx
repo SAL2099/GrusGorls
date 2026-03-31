@@ -128,6 +128,17 @@ export default function ListingDetail() {
                     <Text style={styles.text}>{item.location}</Text>
                 </View>
 
+                {/* Show Pickup Timer on Detail Page */}
+                {currentUser?.id === item.reserved_by && item.ready_for_pickup_at && (
+                    <View style={[styles.reservationInfoCard, { backgroundColor: '#4CAF50', marginBottom: 0 }]}>
+                        <Text style={styles.resLabel}>READY FOR PICKUP</Text>
+                        <Text style={styles.resNumber}>{getRemainingTime(item.ready_for_pickup_at)}</Text>
+                        <Text style={{ color: '#fff', fontSize: 12, textAlign: 'center' }}>
+                            Please collect this item from {item.location} before the timer runs out.
+                        </Text>
+                    </View>
+                )}
+
                 {currentUser?.id === item.user_id && (
                     <Pressable style={styles.deleteBtn} onPress={handleDelete}>
                         <Text style={styles.buttonText}>Delete Listing</Text>
@@ -145,6 +156,23 @@ export default function ListingDetail() {
         </Screen>
     );
 }
+
+const getRemainingTime = (readyAt: any) => {
+  if (!readyAt) return null;
+
+  const expiryDate = new Date(readyAt);
+  expiryDate.setHours(expiryDate.getHours() + 48);
+
+  const now = new Date();
+  const diff = expiryDate.getTime() - now.getTime();
+
+  if (diff <= 0) return "Expired";
+
+  const hours = Math.floor(diff / (1000 * 60 * 60));
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+
+  return `${hours}h ${minutes}m left`;
+};
 
 // Styles for consistancy
 const styles = StyleSheet.create({
@@ -257,7 +285,7 @@ const styles = StyleSheet.create({
 
     //reservation styles
     reservationInfoCard: {
-        backgroundColor: "#CE6674", 
+        backgroundColor: "#CE6674",
         padding: 20,
         marginHorizontal: 16,
         borderRadius: 12,

@@ -6,6 +6,7 @@ import type { User } from '@supabase/supabase-js';
 import { Ionicons } from '@expo/vector-icons';
 import ItemCard from '@/components/ItemCard';
 import { router } from 'expo-router';
+import * as Notifications from 'expo-notifications';
 
 type Profile = {
   id: string;
@@ -78,16 +79,16 @@ export default function StoreHomeScreen() {
         .eq("reserved", true)
         .is("collected_at", null);
 
-        // console.log("PROFILE:", storeProfile);
-        // console.log("STORE ID:", storeProfile?.store_id);
-        // console.log("FETCHED ITEMS:", data);
-        // console.log("ERROR:", error);
+      // console.log("PROFILE:", storeProfile);
+      // console.log("STORE ID:", storeProfile?.store_id);
+      // console.log("FETCHED ITEMS:", data);
+      // console.log("ERROR:", error);
 
       if (!error) setItems(data);
     })();
   }, [storeProfile]);
 
-    // Filter reserved items by search
+  // Filter reserved items by search
   useEffect(() => {
     const q = searchQuery.toLowerCase();
     setFilteredItems(
@@ -100,10 +101,76 @@ export default function StoreHomeScreen() {
     );
   }, [searchQuery, items]);
 
+  useEffect(() => {
+    if (!storeProfile?.store_id) {
+      console.log("No store_id found yet, waiting...");
+      return;
+    }
+
+    console.log("Listening for reservations at Store:", storeProfile.store_id);
+
+    const channel = supabase
+      .channel('store-reservations')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'photos',
+          filter: `store_id=eq.${storeProfile.store_id}`,
+        },
+        (payload) => {
+          console.log("Change detected!", payload);
+          
+          const isNewReservation =
+            payload.new.reserved === true &&
+            payload.new.reservation_number &&
+            !payload.old.reservation_number; 
+
+          if (isNewReservation) {
+            console.log("New reservation detected! Triggering notification...");
+            triggerStoreNotification(payload.new);
+
+            // Refresh the list locally
+            setItems(current => [payload.new, ...current.filter(i => i.id !== payload.new.id)]);
+          } else {
+            // Still update the item in the list for other changes (e.g. ready_for_pickup_at)
+            setItems(current =>
+              current.map(i => i.id === payload.new.id ? payload.new : i)
+            );
+          }
+        }
+      )
+      .subscribe((status) => {
+        console.log("Subscription status:", status);
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [storeProfile]);
+
+  // Function to show the alert to the shop staff
+  const triggerStoreNotification = async (item: any) => {
+    const { status } = await Notifications.getPermissionsAsync();
+    if (status !== 'granted') {
+      await Notifications.requestPermissionsAsync();
+    }
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: "🚨 New Reservation!",
+        body: `Remove "${item.title}" from the shop floor.`,
+        data: { itemId: item.id },
+      },
+      trigger: null, // Send immediately
+    });
+  };
+
+
   return (
     <Screen>
       <View style={styles.container}>
-        
+
         {/* Search Bar */}
         <View style={styles.searchWrapper}>
           <Ionicons name="search" size={18} color="#888" style={styles.searchIcon} />
@@ -121,21 +188,21 @@ export default function StoreHomeScreen() {
           data={filteredItems}
           keyExtractor={(item) => item.id.toString()}
           numColumns={2}
-          columnWrapperStyle={{ gap: 12}}
+          columnWrapperStyle={{ gap: 12 }}
           contentContainerStyle={{ rowGap: 16 }}
           renderItem={({ item }) => (
-            <ItemCard 
+            <ItemCard
               item={item}
               showReservedInfo={true}
               onPress={() => router.push({
                 pathname: "/(store)/item/[id]",
-                params: {id: item.id.toString()}
+                params: { id: item.id.toString() }
               })
               }
             />
           )}
         />
-        
+
       </View>
     </Screen>
   );
@@ -163,4 +230,5 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 12,
     color: "#000",
-  }})
+  }
+})
