@@ -3,6 +3,7 @@ import { useLocalSearchParams, useRouter, useSegments } from "expo-router";
 import { supabase } from "../../lib/supabase";
 import { useEffect, useState } from "react";
 import Screen from "../../components/Screen";
+import * as Notifications from 'expo-notifications';
 
 export default function ItemDetails() {
   const { item, id } = useLocalSearchParams();
@@ -113,6 +114,9 @@ export default function ItemDetails() {
   const handleCollected = async () => {
     if (!parsedItem) return;
 
+    const fee = parseFloat((parsedItem.price * 0.10).toFixed(2));
+    const userIdToCharge = parsedItem.reserved_by;
+
     const { error } = await supabase
       .from("photos")
       .update({
@@ -129,9 +133,25 @@ export default function ItemDetails() {
       return;
     }
 
-    Alert.alert("Collected", "Item marked as collected.", [
-      { text: "OK", onPress: () => router.replace("/(store)") }
-    ]);
+    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+    for (const n of scheduled) {
+      if (n.content.data?.itemId === Number(parsedItem.id)) {
+        await Notifications.cancelScheduledNotificationAsync(n.identifier);
+      }
+    }
+
+    const { error: rpcError } = await supabase.rpc('increment_monthly_total', {
+      user_id: userIdToCharge,
+      amount: fee // This will now match the single 'numeric' function in the DB
+    });
+
+    if (rpcError) {
+      console.error("RPC error:", rpcError);
+      Alert.alert("Error", "Could not update user bill.");
+    } else {
+      Alert.alert("Collected", "Item marked as collected and user billed.");
+      router.replace("/(store)");
+    }
   };
 
   const handleReadyForPickup = async () => {

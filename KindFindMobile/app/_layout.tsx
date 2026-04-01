@@ -14,13 +14,41 @@ import * as Notifications from 'expo-notifications';
 const expiryTimers = new Map<number, ReturnType<typeof setTimeout>>();
 
 Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
+  handleNotification: async (notification) => {
+    const data = notification.request.content.data;
+    const itemId = data?.itemId;
+    const type = data?.type;
+
+    // If it's a warning or expiry
+    if (itemId && (type === "warning" || type === "expired")) {
+      const { data: dbData, error } = await supabase
+        .from("photos")
+        .select("collected_at, reserved")
+        .eq("id", itemId)
+        .single();
+
+      // If already collected or no longer reserved, silence the notification
+      if (!error && dbData && (dbData.collected_at !== null || dbData.reserved === false)) {
+        console.log("Blocking notification for collected item.");
+        return {
+          shouldShowAlert: false,
+          shouldPlaySound: false,
+          shouldSetBadge: false,
+          shouldShowBanner: false,
+          shouldShowList: false,
+        };
+      }
+    }
+
+    // Default behavior for everything else (or if item is still valid)
+    return {
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+      shouldShowBanner: true,
+      shouldShowList: true,
+    };
+  },
 });
 
 // Cancel any existing scheduled notifications for an item 
@@ -122,6 +150,41 @@ export default function RootLayout() {
   const [signedIn, setSignedIn] = useState(false);
   const router = useRouter();
   const segments = useSegments();
+
+  useEffect(() => {
+    const foregroundSubscription = Notifications.addNotificationReceivedListener(async (notification) => {
+      // Use optional chaining to safely get data
+      const data = notification.request.content.data;
+      const itemId = data?.itemId;
+      const type = data?.type;
+
+      if (itemId && (type === "warning" || type === "expired")) {
+        const { data: dbData, error } = await supabase
+          .from("photos")
+          .select("collected_at, reserved")
+          .eq("id", itemId)
+          .single();
+
+        if (!error && dbData) {
+          // Check if it's already been dealt with
+          if (dbData.collected_at !== null || dbData.reserved === false) {
+            console.log(`Dismissing stale notification for item ${itemId}`);
+
+            // Get the string identifier explicitly
+            const idToDismiss: string = notification.request.identifier;
+            await Notifications.dismissNotificationAsync(idToDismiss);
+
+            // Clean up future scheduled ones too
+            await cancelItemNotifications(Number(itemId));
+          }
+        }
+      }
+    });
+
+    return () => {
+      foregroundSubscription.remove();
+    };
+  }, []);
 
   // Auth + notification channel setup 
   useEffect(() => {

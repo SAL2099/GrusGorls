@@ -247,22 +247,45 @@ export default function ProfileScreen() {
       >
         <View style={styles.container}>
           <View style={styles.card}>
-            <Text style={styles.sub}>Account type: {isStore ? "Store" : "User"}</Text>
-
-
             {!editing ? (
               <>
-                <Text style={styles.name}>{profile.display_name}</Text>
-
                 {isStore ? (
                   <>
+                    <Text style={styles.sub}>Account type: {isStore ? "Store" : "User"}</Text>
                     <Text style={styles.sub}>Store name: {profile.store_name ?? "—"}</Text>
                     <Text style={styles.sub}>Opening times: {profile.opening_times ?? "—"}</Text>
                     <Text style={styles.sub}>Address: {profile.address ?? "—"}</Text>
                   </>
                 ) : (
-                  <Text style={styles.sub}>Welcome back 💚</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', marginTop: 8 }}>
+                    {/* Left side — name and welcome */}
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.sub}>Account type: {isStore ? "Store" : "User"}</Text>
+                      <Text style={styles.name}>{profile.display_name}</Text>
+                      <Text style={styles.sub}>Welcome back 💚</Text>
+                    </View>
+
+                    {/* Right side — bill */}
+                    <View style={styles.billCard}>
+                      <Text style={styles.billLabel}>Monthly Bill</Text>
+                      <Text style={styles.billAmount}>£{(profile.monthly_total ?? 0).toFixed(2)}</Text>
+                      <Pressable
+                        style={[styles.button, { backgroundColor: '#4CAF50', marginTop: 6, width: '100%' }]}
+                        onPress={async () => {
+                          await supabase
+                            .from("profiles")
+                            .update({ monthly_total: 0 })
+                            .eq("id", profile.id);
+                          await loadProfile();
+                          Alert.alert("Paid!", "Your monthly bill has been cleared.");
+                        }}
+                      >
+                        <Text style={styles.buttonText}>Pay Bill</Text>
+                      </Pressable>
+                    </View>
+                  </View>
                 )}
+
 
                 <Pressable style={styles.button} onPress={() => setEditing(true)}>
                   <Text style={styles.buttonText}>Edit profile</Text>
@@ -612,7 +635,7 @@ const styles = StyleSheet.create({
   // Container style for the whole screen
   container: {
     padding: 16,
-    gap: 16
+    gap: 10
   },
 
   center: {
@@ -625,7 +648,8 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: "#121C0C",
     borderRadius: 16,
-    padding: 14
+    padding: 14,
+    paddingTop: 10,
   },
 
   name: {
@@ -714,7 +738,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: 'rgba(206, 102, 116, 0.9)', // Matching your primary pink/red
+    backgroundColor: 'rgba(206, 102, 116, 0.9)',
     paddingVertical: 2,
     alignItems: 'center',
   },
@@ -774,6 +798,30 @@ const styles = StyleSheet.create({
     paddingRight: 15,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+
+  //Total
+  billCard: {
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderRadius: 12,
+    padding: 12,
+    alignItems: "center",
+    minWidth: 120,
+    paddingBottom: 10,
+    marginBottom:10,
+  },
+  billLabel: {
+    color: "#fff",
+    opacity: 0.7,
+    fontSize: 12,
+    textTransform: "uppercase",
+    fontWeight: "800",
+  },
+  billAmount: {
+    color: "#fff",
+    fontSize: 32,
+    fontWeight: "900",
+    marginVertical: 6,
   },
 });
 
