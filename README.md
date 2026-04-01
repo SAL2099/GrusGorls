@@ -22,5 +22,5 @@ The repository for Gru's Gorls CM3141 coursework
    Download the Expo Go app:
       Scan the QR code with Expo Go (Android)
       Scan with the Camera app (iOS)
-
+      (Make sure you are on the same network and do not have a vpn on as it can block it from loading)
 

@@ -5,6 +5,7 @@ import { supabase } from "../lib/supabase";
 import { Ionicons } from "@expo/vector-icons"; //Icon
 import { useRouter } from "expo-router";
 import ItemCard from './ItemCard';
+import AdvertCard from "./Advertising";
 
 export default function HomeScreen() { // Main component for the home screen that displays a feed of uploaded items
   const isFocused = useIsFocused();
@@ -24,13 +25,16 @@ export default function HomeScreen() { // Main component for the home screen tha
   //search bar
   const [searchQuery, setSearchQuery] = useState("");
 
+  const [adverts, setAdverts] = useState([]);
+
   // navigation for pressable items
   const router = useRouter();
 
-  // Load the initial set of items when the component mounts
+  // Load the initial set of items + adverts when the component mounts
   useEffect(() => {
     if (isFocused) {
       loadInitial();
+      loadAdverts();
     }
   }, [isFocused]);
 
@@ -123,6 +127,18 @@ export default function HomeScreen() { // Main component for the home screen tha
       setHasMore(data.length === PAGE_SIZE);
     }
     setLoadingMore(false);
+  }
+
+  // function to load adverts
+  async function loadAdverts(){
+    const {data, error } = await supabase
+      .from("adverts")
+      .select("*")
+      .eq("active", true)
+    
+    if (!error) {
+      setAdverts(data);
+    }
   }
 
   const onRefresh = useCallback(async () => {
@@ -240,6 +256,21 @@ export default function HomeScreen() { // Main component for the home screen tha
     return <ActivityIndicator size="large" style={{ marginTop: 50 }} />;
   }
 
+  // after how many posts should an advert appear
+  const AD_INTERVAL = 6;
+
+  const feedWithAds = filteredItems.flatMap((item, index) => {
+    const arr = [item];
+
+    if ((index + 1) % AD_INTERVAL === 0 && adverts.length > 0) {
+      const advertIndex = Math.floor(index / AD_INTERVAL) % adverts.length;
+      const advert = adverts[advertIndex];
+      arr.push({ type: "advert", advert });
+    }
+
+    return arr;
+  })
+
   // Render the FlatList of items, with support for pull-to-refresh and infinite scrolling
   return (
     <View style={styles.container}>
@@ -254,25 +285,34 @@ export default function HomeScreen() { // Main component for the home screen tha
         />
       </View>
 
-      <FlatList
-        data={filteredItems}
-        keyExtractor={(item) => item.id.toString()}
+    <FlatList
+        data={feedWithAds}
+        keyExtractor={(item, index) => 
+          item.type === "advert"
+          ? `advert-${index}`
+          : item.id.toString()
+        }
         numColumns={2}
         columnWrapperStyle={{ gap: 12 }}
         contentContainerStyle={{ rowGap: 16 }}
-        renderItem={({ item }) => (
-          <ItemCard
-            item={item}
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            onPress={() =>
-              router.push({
-                pathname: "/Item/ItemDetails",
-                params: { item: JSON.stringify(item) }
-              })
-            }
-          />
-        )}
+        renderItem={({ item }) => {
+          if (item.type === "advert"){
+            return <AdvertCard advert={item.advert} />;
+          }
+          return (
+            <ItemCard
+              item={item}
+              searchQuery={searchQuery}
+              setSearchQuery={setSearchQuery}
+              onPress={() =>
+                router.push({
+                  pathname: "/Item/ItemDetails",
+                  params: { item: JSON.stringify(item) }
+                })
+              }
+            />
+          );
+        }}
         refreshing={refreshing}
         onRefresh={onRefresh}
         onEndReached={loadMore}
