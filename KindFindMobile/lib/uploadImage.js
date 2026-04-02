@@ -2,6 +2,7 @@ import * as FileSystem from "expo-file-system/legacy";
 import { decode } from "base64-arraybuffer";
 import { supabase } from "./supabase";
 
+// Function to upload an image to Supabase Storage and return the public URL
 export async function uploadImage(uri) {
   try {
     const base64 = await FileSystem.readAsStringAsync(uri, {

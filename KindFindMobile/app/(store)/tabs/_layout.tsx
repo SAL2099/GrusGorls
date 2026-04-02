@@ -3,6 +3,7 @@ import { View } from "react-native";
 import Header from "../../../components/Header";
 import TabIcon from "../../../components/TabIcons";
 
+// StoreLayout component defines the layout for the store section of the app
 export default function StoreLayout() {
   return (
     <View style={{ flex: 1, backgroundColor: "#192710" }}>

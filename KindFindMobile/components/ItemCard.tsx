@@ -1,3 +1,4 @@
+//imports
 import { View, Text, Image, StyleSheet, TouchableOpacity, Pressable } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 
@@ -20,6 +21,7 @@ type Props = {
   setSearchQuery?: React.Dispatch<React.SetStateAction<string>>;
 };
 
+// ItemCard component displays individual item details in a card format, including image, title, price, size, location, and tags. It also allows for tag-based searching and can show reservation info
 export default function ItemCard({
   item,
   onPress,
@@ -64,7 +66,7 @@ export default function ItemCard({
       </View>
 
       <Text style={styles.cardPrice}>£{item.price.toFixed(2)}</Text>
-      
+
       <Text style={styles.cardMeta} numberOfLines={1}>
         Size: {item.size}
       </Text>
@@ -86,6 +88,7 @@ export default function ItemCard({
 }
 
 const styles = StyleSheet.create({
+  //card styles for the item card component
   card: {
     width: "48%",
     borderRadius: 12,
@@ -109,11 +112,13 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#111",
   },
-    cardMeta: {
+  cardMeta: {
     marginTop: 4,
     color: "#777",
     fontSize: 12,
   },
+
+  // Styles for the reservation info row
   reservedRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -124,6 +129,8 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: "#777",
   },
+
+  // Styles for the tag chips
   tagRow: {
     flexDirection: "row",
     flexWrap: "wrap",

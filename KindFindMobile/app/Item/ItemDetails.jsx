@@ -1,3 +1,4 @@
+// Imports 
 import { View, Text, Image, StyleSheet, ScrollView, Pressable, Alert } from "react-native";
 import { useLocalSearchParams, useRouter, useSegments } from "expo-router";
 import { supabase } from "../../lib/supabase";
@@ -5,6 +6,7 @@ import { useEffect, useState } from "react";
 import Screen from "../../components/Screen";
 import * as Notifications from 'expo-notifications';
 
+// ItemDetails screen shows detailed information about a specific item and allows users to reserve it or stores to mark it as collected
 export default function ItemDetails() {
   const { item, id } = useLocalSearchParams();
   const router = useRouter();
@@ -14,7 +16,6 @@ export default function ItemDetails() {
   const isStoreView = segments.includes("(store)");
 
   const [parsedItem, setParsedItem] = useState(null);
-  const [stores, setStores] = useState([]);
   const [isStoreMatch, setIsStoreMatch] = useState(false);
   const [user, setUser] = useState(null);
 
@@ -142,7 +143,7 @@ export default function ItemDetails() {
 
     const { error: rpcError } = await supabase.rpc('increment_monthly_total', {
       user_id: userIdToCharge,
-      amount: fee // This will now match the single 'numeric' function in the DB
+      amount: fee 
     });
 
     if (rpcError) {
@@ -154,6 +155,7 @@ export default function ItemDetails() {
     }
   };
 
+  // Mark as ready for pickup (store only)
   const handleReadyForPickup = async () => {
     if (!parsedItem) return;
 
@@ -173,6 +175,7 @@ export default function ItemDetails() {
     router.back();
   };
 
+  // Cancel reservation (store only)
   const handleCancelReservation = async () => {
     Alert.alert(
       "Cancel Reservation",
@@ -235,6 +238,7 @@ export default function ItemDetails() {
   return (
     <Screen>
       <ScrollView style={styles.container}>
+        {/* Back button */}
         <Pressable style={styles.backBtn} onPress={() => router.back()}>
           <Image
             source={require('../../assets/images/Back Arrow.png')}
@@ -242,6 +246,7 @@ export default function ItemDetails() {
           />
         </Pressable>
 
+        {/* Item details card */}
         <View style={styles.card}>
           <Image
             source={{ uri: parsedItem.image_url }}
@@ -322,6 +327,7 @@ export default function ItemDetails() {
 }
 
 const styles = StyleSheet.create({
+  // General container styling for the screen
   container: {
     flex: 1,
     padding: 16,
@@ -336,6 +342,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
 
+  // Styles for the item detials
   title: {
     fontSize: 26,
     fontWeight: "700",
@@ -366,6 +373,7 @@ const styles = StyleSheet.create({
     color: "#000000",
   },
 
+  //Reserve styles
   reserveButton: {
     backgroundColor: "#CE6674",
     paddingVertical: 14,
@@ -380,6 +388,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
 
+  //Card styling for the item details
   card: {
     backgroundColor: "#eef2e4",
     borderRadius: 14,
@@ -390,6 +399,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
 
+  //Back button styling
   backBtn: {
     backgroundColor: "#CE6674",
     padding: 15,
@@ -405,6 +415,7 @@ const styles = StyleSheet.create({
     height: 20,
   },
 
+  //tag styling for the item details
   tagRow: {
     flexDirection: "row",
     flexWrap: "wrap",

@@ -10,6 +10,7 @@ import { View } from 'react-native';
 import Header from '../../components/Header';
 import TabIcon from '../../components/TabIcons';
 
+// TabLayout component defines the layout for the main tab navigation of the app
 export default function TabLayout() {
   return (
     <View style={{ flex: 1, backgroundColor: '#192710' }}>
@@ -32,6 +33,7 @@ export default function TabLayout() {
           },
         }}
       >
+        {/* Home tab */}
         <Tabs.Screen
           name="index"
           options={{
@@ -45,6 +47,7 @@ export default function TabLayout() {
           }}
         />
 
+        {/* Map tab (alias file inside (tabs)) */}
         <Tabs.Screen
           name="map"
           options={{

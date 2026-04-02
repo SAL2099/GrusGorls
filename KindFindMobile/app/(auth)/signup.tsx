@@ -107,84 +107,84 @@ export default function SignUpScreen() {
     }
 
 
-
-async function signUp() {
-    if (!email || !password || !displayName.trim()) {
-        Alert.alert("Missing info", "Please fill in all fields.");
-        return;
-    }
-
-    const validation = validatePassword(password);
-    if (!validation.isValid) {
-        Alert.alert("Weak Password", validation.error);
-        return;
-    }
-
-    if (role === "store" && !selectedShop) {
-        Alert.alert("Store missing", "Please select a store.");
-        return;
-    }
-
-    setLoading(true);
-
-    try {
-        if (role === "store") {
-            const { data: existingStore } = await supabase
-                .from("profiles")
-                .select("id")
-                .eq("store_id", String(selectedShop))
-                .maybeSingle();
-
-            if (existingStore) {
-                setLoading(false);
-                return Alert.alert("Taken", "This store is already registered.");
-            }
-        }
-
-        const { data: authData, error: authError } = await supabase.auth.signUp({
-            email,
-            password,
-        });
-
-        if (authError) throw authError;
-
-        const userId = authData.user?.id;
-
-        if (!userId) {
-            Alert.alert("Verify Email", "Please check your inbox to confirm your account.");
-            router.replace("/(auth)/login");
+    //Function for signing up a new user or store owner, creates an account with Supabase, and inserting the user's profile into the database
+    async function signUp() {
+        if (!email || !password || !displayName.trim()) {
+            Alert.alert("Missing info", "Please fill in all fields.");
             return;
         }
 
-        const { error: profileError } = await supabase.from("profiles").insert([{
-            id: userId,
-            role,
-            display_name: displayName.trim(),
-            store_id: role === "store" ? String(selectedShop) : null,
-            store_name: role === "store" ? storeName.trim() : null,
-            opening_times: role === "store" ? openingTimes.trim() : null,
-            address: role === "store" ? address.trim() : null,
-        }]);
-
-        if (profileError) {
-            console.log("PROFILE ERROR: ", profileError);
-            
-            await supabase.auth.signOut();
-            
-            if (profileError.code === "23505") {
-                throw new Error("This store has been registered by another user.");
-            }
-            throw profileError;
+        const validation = validatePassword(password);
+        if (!validation.isValid) {
+            Alert.alert("Weak Password", validation.error);
+            return;
         }
 
-        router.replace(role === "store" ? "/(store)/tabs" : "/(tabs)");
+        if (role === "store" && !selectedShop) {
+            Alert.alert("Store missing", "Please select a store.");
+            return;
+        }
 
-    } catch (e: any) {
-        Alert.alert("Sign up failed", e?.message ?? "An error occurred");
-    } finally {
-        setLoading(false);
+        setLoading(true);
+
+        try {
+            if (role === "store") {
+                const { data: existingStore } = await supabase
+                    .from("profiles")
+                    .select("id")
+                    .eq("store_id", String(selectedShop))
+                    .maybeSingle();
+
+                if (existingStore) {
+                    setLoading(false);
+                    return Alert.alert("Taken", "This store is already registered.");
+                }
+            }
+
+            const { data: authData, error: authError } = await supabase.auth.signUp({
+                email,
+                password,
+            });
+
+            if (authError) throw authError;
+
+            const userId = authData.user?.id;
+
+            if (!userId) {
+                Alert.alert("Verify Email", "Please check your inbox to confirm your account.");
+                router.replace("/(auth)/login");
+                return;
+            }
+
+            const { error: profileError } = await supabase.from("profiles").insert([{
+                id: userId,
+                role,
+                display_name: displayName.trim(),
+                store_id: role === "store" ? String(selectedShop) : null,
+                store_name: role === "store" ? storeName.trim() : null,
+                opening_times: role === "store" ? openingTimes.trim() : null,
+                address: role === "store" ? address.trim() : null,
+            }]);
+
+            if (profileError) {
+                console.log("PROFILE ERROR: ", profileError);
+
+                await supabase.auth.signOut();
+
+                if (profileError.code === "23505") {
+                    throw new Error("This store has been registered by another user.");
+                }
+                throw profileError;
+            }
+
+            router.replace(role === "store" ? "/(store)/tabs" : "/(tabs)");
+
+        } catch (e: any) {
+            Alert.alert("Sign up failed", e?.message ?? "An error occurred");
+        } finally {
+            setLoading(false);
+        }
     }
-}
 
     // Render the sign-up form with inputs for email, password, display name, and additional store info if the store role is selected
     return (
@@ -237,8 +237,8 @@ async function signUp() {
                                 ref={passwordRef}
                                 placeholder="Password"
                                 placeholderTextColor="#A7A7A7"
-                                secureTextEntry={!showPassword} 
-                                style={[styles.Passwordinput, { flex: 1, marginBottom: 0 }]} 
+                                secureTextEntry={!showPassword}
+                                style={[styles.Passwordinput, { flex: 1, marginBottom: 0 }]}
                                 value={password}
                                 onChangeText={setPassword}
                                 returnKeyType="next"
@@ -285,6 +285,7 @@ async function signUp() {
 
                         />
 
+                        {/* Additional inputs for store owners, including a dropdown to select their store from nearby options */}
                         {role === "store" && (
                             <>
                                 {loadingShops ? (
@@ -353,6 +354,7 @@ const styles = StyleSheet.create({
         marginBottom: 14
     },
 
+    //tags for user/store selection
     roleRow: {
         flexDirection: "row",
         gap: 10,
@@ -443,10 +445,10 @@ const styles = StyleSheet.create({
     passwordContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: "#121C0C", 
+        backgroundColor: "#121C0C",
         borderRadius: 12,
-        marginBottom: 10, 
-        height: 50, 
+        marginBottom: 10,
+        height: 50,
         overflow: 'hidden',
     },
     eyeIcon: {

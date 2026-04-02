@@ -1,20 +1,24 @@
+//Imports
 import { useEffect, useState, useCallback } from "react";
 import { useIsFocused } from "@react-navigation/native";
 import { View, Text, Image, FlatList, ActivityIndicator, Dimensions, TextInput, StyleSheet, Pressable } from "react-native"; // Import UI components from React Native
 import { supabase } from "../lib/supabase";
-import { Ionicons } from "@expo/vector-icons"; //Icon
+import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import ItemCard from './ItemCard';
 import AdvertCard from "./Advertising";
 
-export default function HomeScreen() { // Main component for the home screen that displays a feed of uploaded items
+// HomeScreen component that displays a feed of items fetched from the Supabase database, with support for searching, pull-to-refresh, and infinite scrolling
+export default function HomeScreen() { 
+  // State variables to manage the list of items, loading states, pagination, search query, and adverts
   const isFocused = useIsFocused();
-  const [items, setItems] = useState([]); // State to hold the list of items fetched from the database
-  const [loading, setLoading] = useState(true); // State to indicate whether the initial data is still loading
-  const [refreshing, setRefreshing] = useState(false); // State to indicate whether the list is being refreshed (pull-to-refresh)
-  const [loadingMore, setLoadingMore] = useState(false); // State to indicate whether more items are being loaded (infinite scroll)
-  const [page, setPage] = useState(0); // State to keep track of the current page for pagination
-  const [hasMore, setHasMore] = useState(true); // State to indicate whether there are more items to load (used for infinite scroll)
+  const [items, setItems] = useState([]); 
+
+  const [loading, setLoading] = useState(true); 
+  const [refreshing, setRefreshing] = useState(false); 
+  const [loadingMore, setLoadingMore] = useState(false); 
+  const [page, setPage] = useState(0); 
+  const [hasMore, setHasMore] = useState(true); 
 
   const PAGE_SIZE = 10; // Number of items to fetch per page for pagination
 
@@ -22,9 +26,8 @@ export default function HomeScreen() { // Main component for the home screen tha
   const spacing = 10; // Spacing between cards in the grid layout
   const cardWidth = (screenWidth - spacing) / 2; // Calculate the width of each card in a 2-column grid layout, accounting for spacing
 
-  //search bar
+  // State for search query and adverts
   const [searchQuery, setSearchQuery] = useState("");
-
   const [adverts, setAdverts] = useState([]);
 
   // navigation for pressable items
@@ -58,7 +61,7 @@ export default function HomeScreen() { // Main component for the home screen tha
           else if (payload.eventType === 'UPDATE') {
             const updatedItem = payload.new;
 
-            // Logic: Remove if it's now reserved/collected, otherwise update the data
+            // Remove if it's now reserved/collected, otherwise update the data
             if (updatedItem.reserved === true || updatedItem.collected_at !== null) {
               setItems((prev) => prev.filter((item) => item.id !== updatedItem.id));
             } else {
@@ -141,6 +144,7 @@ export default function HomeScreen() { // Main component for the home screen tha
     }
   }
 
+  // Function to refresh the list of items when the user performs a pull-to-refresh gesture
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
 

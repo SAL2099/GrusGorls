@@ -52,6 +52,7 @@ export default function LoginScreen() {
         }
     }
 
+    // Function to handle the forgot password functionality, which sends a reset code to the user's email and navigates them to the reset password screen
     async function handleForgotPassword() {
         if (!email) {
             Alert.alert("Email required", "Please enter your email address to receive a reset code.");

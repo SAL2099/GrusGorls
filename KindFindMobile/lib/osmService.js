@@ -6,6 +6,7 @@ export async function fetchOsmShops(lat, lng, radiusMeters = 5000) {
         "https://overpass.nchc.org.tw/api/interpreter",
     ];
 
+    // Overpass QL query to find nodes, ways, and relations tagged as charity or second-hand shops within the specified radius
     const query = `
     [out:json][timeout:45];
     (
@@ -17,6 +18,7 @@ export async function fetchOsmShops(lat, lng, radiusMeters = 5000) {
 
     let lastErr = null;
 
+    // Try each endpoint in order until we get a successful response
     for (const url of endpoints) {
         try {
             const res = await fetch(url, {

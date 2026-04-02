@@ -1,3 +1,5 @@
+//Supabase client setup for interacting with the Supabase backend
+
 import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = "https://okyhuhgwghvzqozexrhr.supabase.co";

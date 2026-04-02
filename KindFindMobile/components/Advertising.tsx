@@ -1,5 +1,4 @@
 import { View, Text, Image, StyleSheet, Pressable, Linking} from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 
 export type Advert = {
   id: number;
@@ -41,6 +40,7 @@ export default function AdvertCard({ advert }: { advert: Advert }) {
 }
 
 const styles = StyleSheet.create({
+// Styles for the advert card component
   card: {
     width: "48%",
     borderRadius: 12,

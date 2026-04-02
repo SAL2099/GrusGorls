@@ -1,7 +1,8 @@
+//Imports
 import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, ActivityIndicator, Pressable, TextInput, Alert, Image, FlatList, Dimensions } from "react-native";
-import Screen from "../../components/Screen"; //import custom Screen component for consistent styling and layout
-import { supabase } from "../../lib/supabase"; //Import supabase client for authentication and database interactions
+import Screen from "../../components/Screen"; 
+import { supabase } from "../../lib/supabase"; 
 import { useRouter } from "expo-router";
 import { useIsFocused } from "@react-navigation/native";
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
@@ -208,8 +209,8 @@ export default function ProfileScreen() {
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setTick((t) => t + 1); // This simple 'tick' forces the component to re-render
-    }, 60000); // 60,000ms = 1 minute
+      setTick((t) => t + 1); 
+    }, 60000); //1 minute
 
     return () => clearInterval(timer);
   }, []);
@@ -341,6 +342,7 @@ export default function ProfileScreen() {
                           </View>
                         )}
 
+                        {/* Update and Cancel buttons for password change */}
                         <View style={{ flexDirection: 'row', gap: 8 }}>
                           <Pressable
                             style={[styles.button, { flex: 1 }]}
@@ -369,6 +371,7 @@ export default function ProfileScreen() {
               </>
             ) : (
               <>
+              {/* Edit mode: show input fields to update profile information */}
                 <Text style={styles.sectionTitle}>Edit</Text>
 
                 <Text style={styles.label}>Display name</Text>
@@ -530,10 +533,7 @@ export default function ProfileScreen() {
                   columnWrapperStyle={styles.uploadRow}
                   contentContainerStyle={styles.uploadGrid}
                   renderItem={({ item }) => {
-                    // 1. Logic goes here inside curly braces
                     const timeLeft = getRemainingTime(item.ready_for_pickup_at);
-
-                    // 2. Explicitly return the JSX
                     return (
                       <Pressable
                         style={styles.imageWrapper}
@@ -613,6 +613,7 @@ export default function ProfileScreen() {
   );
 }
 
+// Helper function to calculate remaining time for pickup based on the ready_for_pickup_at timestamp
 const getRemainingTime = (readyAt: any) => {
   if (!readyAt) return null;
 
@@ -630,7 +631,7 @@ const getRemainingTime = (readyAt: any) => {
   return `${hours}h ${minutes}m left`;
 };
 
-// Define styles for the ProfileScreen component using StyleSheet
+
 const styles = StyleSheet.create({
   // Container style for the whole screen
   container: {

@@ -1,12 +1,13 @@
-import React, { useState, useEffect, useRef } from "react"; // React Native component for uploading images and metadata to Supabase
-import { View, Text, Button, Image, TextInput, StyleSheet, ActivityIndicator, Alert, Pressable, Modal, Animated } from "react-native"; // UI components from React Native
-import * as ImagePicker from "expo-image-picker"; // Expo module for picking images from the device's library
-import * as Location from "expo-location"; // Needed to get user GPS
-import { Dropdown } from 'react-native-element-dropdown'; // Dropdown component for selecting nearby shops
-import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view'; // Component to ensure the keyboard does not cover input fields on mobile devices
+//Imports
+import React, { useState, useEffect, useRef } from "react"; 
+import { View, Text, Button, Image, TextInput, StyleSheet, ActivityIndicator, Alert, Pressable, Modal, Animated } from "react-native"; 
+import * as ImagePicker from "expo-image-picker"; 
+import * as Location from "expo-location"; 
+import { Dropdown } from 'react-native-element-dropdown'; 
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 
-import MapView, { Marker } from "react-native-maps"; //MapView (smaller map component)
-import { TouchableOpacity } from "react-native"; // TouchableOpacity component for making elements tappable on mobile devices
+import MapView, { Marker } from "react-native-maps"; 
+import { TouchableOpacity } from "react-native"; 
 
 import { uploadImage } from "../../lib/uploadImage";
 import { supabase } from "../../lib/supabase";
@@ -30,7 +31,7 @@ type Shop = {
 };
 
 
-
+// UploadScreen component allows users to upload images, add metadata, and save it to the database
 export default function UploadScreen() {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [title, setTitle] = useState("");
@@ -62,6 +63,7 @@ export default function UploadScreen() {
     Condition: ["New", "Like New", "Good", "Worn"],
   };
 
+  // Animation effect for the "developing" polaroid when a user uploads a photo
   useEffect(() => {
     if (isPrinting) {
       slideAnim.setValue(-200);
@@ -73,6 +75,7 @@ export default function UploadScreen() {
     }
   }, [isPrinting]);
 
+  // Load user profile on component mount
   useEffect(() => {
     (async () => {
       //Get the current user profile from Supabase
@@ -113,6 +116,7 @@ export default function UploadScreen() {
     })();
   }, []);
 
+  // Function to handle image picking and uploading to Supabase storage
   const pickAndUpload = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
@@ -120,6 +124,7 @@ export default function UploadScreen() {
       return;
     }
 
+    // Open image picker and allow user to select an image
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsEditing: true,
@@ -133,6 +138,7 @@ export default function UploadScreen() {
     }
   };
 
+  // Function to save the uploaded image and its metadata to the Supabase database
   const saveMetadata = async () => {
     const { data: userData } = await supabase.auth.getUser();
     const userId = userData?.user?.id;
@@ -220,6 +226,7 @@ export default function UploadScreen() {
     });
   }
 
+  // Check if the form is valid to enable the save button
   const isFormValid =
     imageUrl !== null &&
     title.trim().length > 0 &&
@@ -357,7 +364,7 @@ export default function UploadScreen() {
               <TextInput placeholder="Price" value={price} onChangeText={setPrice} style={styles.price} />
             </View>
 
-            {/* Changed to a Touchable instead of button for style*/}
+            {/* Save Button */}
             <TouchableOpacity
               onPress={saveMetadata}
               disabled={!isFormValid}
@@ -369,7 +376,7 @@ export default function UploadScreen() {
         )}
       </View>
 
-      {/* PRINTING MODAL */}
+      {/* Printing modal */}
       {isPrinting && (
         <Modal visible={isPrinting} transparent={true} animationType="fade">
           <View style={styles.printingOverlay}>
@@ -405,9 +412,24 @@ export default function UploadScreen() {
 
 // Styles for the upload screen components
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, alignItems: "center" },
-  title: { fontSize: 22, marginBottom: 20, color: "#FFF" },
-  image: { width: 250, height: 250, marginVertical: 20 },
+  container: { 
+    flex: 1, 
+    padding: 20, 
+    alignItems: "center" 
+  },
+
+  title: { 
+    fontSize: 22, 
+    marginBottom: 20, 
+    color: "#FFF" 
+  },
+
+  image: {
+     width: 250, 
+     height: 250, 
+     marginVertical: 20 
+  },
+
   input: {
     width: "100%",
     padding: 10,
@@ -426,6 +448,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFF",
   },
 
+  // Dropdown styles
   dropdownWrapper: {
     width: '100%',
     marginBottom: 10,

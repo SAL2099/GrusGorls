@@ -6,6 +6,7 @@ import Screen from "../../components/Screen";
 import { Ionicons } from "@expo/vector-icons";
 import { validatePassword, getPasswordRequirements } from "../../lib/validation";
 
+//ResetPasswordScreen allowing password resets
 export default function ResetPasswordScreen() {
     const { email } = useLocalSearchParams();
     

@@ -145,7 +145,7 @@ export default function ListingDetail() {
                     </Pressable>
                 )}
 
-                {/* 2. Show RESERVATION INFO if the user is the one who reserved it */}
+                {/* Show reservation info if the user is the one who reserved it */}
                 {currentUser?.id === item.reserved_by && item.reserved && (
                     <View style={styles.reservationInfoCard}>
                         <Text style={styles.resLabel}>Your Reservation Number:</Text>
@@ -157,6 +157,7 @@ export default function ListingDetail() {
     );
 }
 
+// Function to calculate remaining time for pickup based on the ready_for_pickup_at timestamp
 const getRemainingTime = (readyAt: any) => {
   if (!readyAt) return null;
 

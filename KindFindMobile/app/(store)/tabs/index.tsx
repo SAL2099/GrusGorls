@@ -8,6 +8,7 @@ import ItemCard from '@/components/ItemCard';
 import { router } from 'expo-router';
 import * as Notifications from 'expo-notifications';
 
+//sets up for the profile and photos types for the store home screen
 type Profile = {
   id: string;
   role: "user" | "store";
@@ -36,7 +37,7 @@ type Photo = {
   reserved_at: string | null;
 };
 
-
+// StoreHomeScreen component displays the store's reserved items and allows shop staff to manage them
 export default function StoreHomeScreen() {
   const [user, setUser] = useState<User | null>(null);
   const [storeProfile, setStoreProfile] = useState<Profile | null>(null);
@@ -78,12 +79,6 @@ export default function StoreHomeScreen() {
         .eq("store_id", storeProfile.store_id)
         .eq("reserved", true)
         .is("collected_at", null);
-
-      // console.log("PROFILE:", storeProfile);
-      // console.log("STORE ID:", storeProfile?.store_id);
-      // console.log("FETCHED ITEMS:", data);
-      // console.log("ERROR:", error);
-
       if (!error) setItems(data);
     })();
   }, [storeProfile]);
@@ -101,6 +96,7 @@ export default function StoreHomeScreen() {
     );
   }, [searchQuery, items]);
 
+  // Listen for real-time updates to reservations for this store
   useEffect(() => {
     if (!storeProfile?.store_id) {
       console.log("No store_id found yet, waiting...");
@@ -163,7 +159,7 @@ export default function StoreHomeScreen() {
         body: `Remove "${item.title}" from the shop floor.`,
         data: { itemId: item.id },
       },
-      trigger: null, // Send immediately
+      trigger: null,
     });
   };
 

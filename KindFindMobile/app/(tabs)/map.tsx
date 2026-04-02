@@ -375,12 +375,12 @@ const styles = StyleSheet.create({
   //Shop detail module (Bottom Information card) 
   modalBackdrop: {
     flex: 1,
-    justifyContent: "flex-end", // Aligns modal to bottom of screen
-    backgroundColor: "rgba(0,0,0,0.4)"  // Semi-transparent backdrop to dim the background and focus on the modal
+    justifyContent: "flex-end", 
+    backgroundColor: "rgba(0,0,0,0.4)"  
   },
 
   modalCard: {
-    backgroundColor: "#121C0C", // Dark background for the modal card
+    backgroundColor: "#121C0C", 
     padding: 16,
     borderTopLeftRadius: 18,
     borderTopRightRadius: 18
