@@ -1,13 +1,13 @@
 //Imports
-import React, { useState, useEffect, useRef } from "react"; 
-import { View, Text, Button, Image, TextInput, StyleSheet, ActivityIndicator, Alert, Pressable, Modal, Animated } from "react-native"; 
-import * as ImagePicker from "expo-image-picker"; 
-import * as Location from "expo-location"; 
-import { Dropdown } from 'react-native-element-dropdown'; 
+import React, { useState, useEffect, useRef } from "react";
+import { View, Text, Button, Image, TextInput, StyleSheet, ActivityIndicator, Alert, Pressable, Modal, Animated } from "react-native";
+import * as ImagePicker from "expo-image-picker";
+import * as Location from "expo-location";
+import { Dropdown } from 'react-native-element-dropdown';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 
-import MapView, { Marker } from "react-native-maps"; 
-import { TouchableOpacity } from "react-native"; 
+import MapView, { Marker } from "react-native-maps";
+import { TouchableOpacity } from "react-native";
 
 import { uploadImage } from "../../lib/uploadImage";
 import { supabase } from "../../lib/supabase";
@@ -241,12 +241,12 @@ export default function UploadScreen() {
       <View style={styles.container}>
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Upload an Image</Text>
-         <TouchableOpacity 
-    style={styles.pickImageButton} 
-    onPress={pickAndUpload}
-  >
-    <Text style={styles.buttonText}>Pick Image</Text>
-  </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.pickImageButton}
+            onPress={pickAndUpload}
+          >
+            <Text style={styles.buttonText}>Pick Image</Text>
+          </TouchableOpacity>
         </View>
 
         {imageUrl && (
@@ -383,7 +383,11 @@ export default function UploadScreen() {
             <View style={styles.cameraContainer}>
 
               {/* The Camera Body */}
-              <View style={styles.cameraTop} />
+              <Image
+                source={require('../../assets/images/camera-icon.png')}
+                style={styles.cameraTop}
+                resizeMode="cover"
+              />
 
               {/* The Hidden Slot */}
               <View style={styles.printerMouth}>
@@ -412,22 +416,22 @@ export default function UploadScreen() {
 
 // Styles for the upload screen components
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    padding: 20, 
-    alignItems: "center" 
+  container: {
+    flex: 1,
+    padding: 20,
+    alignItems: "center"
   },
 
-  title: { 
-    fontSize: 22, 
-    marginBottom: 20, 
-    color: "#FFF" 
+  title: {
+    fontSize: 22,
+    marginBottom: 20,
+    color: "#FFF"
   },
 
   image: {
-     width: 250, 
-     height: 250, 
-     marginVertical: 20 
+    width: 250,
+    height: 250,
+    marginVertical: 20
   },
 
   input: {
@@ -610,15 +614,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: '100%',
   },
+
   cameraTop: {
-    width: 240,
-    height: 80,
-    backgroundColor: '#333',
+    width: 300,
+    height: 300,
     borderTopLeftRadius: 15,
     borderTopRightRadius: 15,
     zIndex: 20,
-    borderBottomWidth: 8,
-    borderBottomColor: '#111',
+    marginBottom: -70,
+    marginLeft: -10,
   },
   printerMouth: {
     width: 240,
@@ -626,6 +630,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     alignItems: 'center',
     zIndex: 10,
+    marginTop: -10
   },
   printingPhoto: {
     zIndex: 5,
@@ -645,7 +650,6 @@ const styles = StyleSheet.create({
   polaroidImage: {
     width: 166,
     height: 166,
-    backgroundColor: '#222', // Looks like a black film before it "develops"
   },
   polaroidText: {
     marginTop: 15,
@@ -674,7 +678,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     fontWeight: "700",
     marginTop: 10,
-    padding: 10, 
+    padding: 10,
     color: "#eef2e4",
   },
 
