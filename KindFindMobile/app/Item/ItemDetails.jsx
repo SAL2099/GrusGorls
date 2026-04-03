@@ -143,7 +143,7 @@ export default function ItemDetails() {
 
     const { error: rpcError } = await supabase.rpc('increment_monthly_total', {
       user_id: userIdToCharge,
-      amount: fee 
+      amount: fee
     });
 
     if (rpcError) {
@@ -285,6 +285,9 @@ export default function ItemDetails() {
           {!isStoreView && isStoreMatch && !parsedItem.reserved && (
             <Pressable style={styles.reserveButton} onPress={handleReserve}>
               <Text style={styles.reserveButtonText}>Reserve</Text>
+              <Text style={{ color: '#fff', fontSize: 12, opacity: 0.85, marginTop: 2 }}>
+                Cost to reserve: £{(parsedItem.price * 0.10).toFixed(2)}
+              </Text>
             </Pressable>
           )}
 

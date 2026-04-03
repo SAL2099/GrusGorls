@@ -284,8 +284,8 @@ export default function RootLayout() {
               if (isCancelledByStore) {
                 await Notifications.scheduleNotificationAsync({
                   content: {
-                    title: "Reservation Cancelled 😞",
-                    body: `Sorry, "${payload.new.title}" is no longer available and has been removed from your reservations.`,
+                    title: "Reservation Cancelled by Store",
+                    body: `Sorry, "${payload.new.title}" is no longer available and has been removed from your reservations. You have not been charged.`,
                     sound: true,
                     data: { itemId: payload.new.id, type: "cancelled" },
                   },

@@ -8,6 +8,7 @@ import { useIsFocused } from "@react-navigation/native";
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { validatePassword, getPasswordRequirements } from "../../lib/validation";
 import { Ionicons } from "@expo/vector-icons"; //Icon
+import { Linking } from 'react-native';
 
 
 const screenWidth = Dimensions.get("window").width;
@@ -273,6 +274,7 @@ export default function ProfileScreen() {
                       <Pressable
                         style={[styles.button, { backgroundColor: '#4CAF50', marginTop: 6, width: '100%' }]}
                         onPress={async () => {
+                          await Linking.openURL('https://www.paypal.com');
                           await supabase
                             .from("profiles")
                             .update({ monthly_total: 0 })
