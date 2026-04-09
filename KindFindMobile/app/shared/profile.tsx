@@ -1,8 +1,8 @@
 //Imports
 import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, ActivityIndicator, Pressable, TextInput, Alert, Image, FlatList, Dimensions } from "react-native";
-import Screen from "../../components/Screen"; 
-import { supabase } from "../../lib/supabase"; 
+import Screen from "../../components/Screen";
+import { supabase } from "../../lib/supabase";
 import { useRouter } from "expo-router";
 import { useIsFocused } from "@react-navigation/native";
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
@@ -199,6 +199,33 @@ export default function ProfileScreen() {
     await supabase.auth.signOut();
   }
 
+  //Function to handle delete shop side
+  async function deleteShopItem(itemId: string) {
+    Alert.alert(
+      "Delete Item",
+      "Are you sure you want to delete this item?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            const { error } = await supabase
+              .from("photos")
+              .delete()
+              .eq("id", itemId);
+
+            if (error) {
+              Alert.alert("Error", error.message);
+            } else {
+              await loadProfile();
+            }
+          },
+        },
+      ]
+    );
+  }
+
   // Load the profile data when the component mounts
   useEffect(() => {
     if (isFocused) {
@@ -210,7 +237,7 @@ export default function ProfileScreen() {
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setTick((t) => t + 1); 
+      setTick((t) => t + 1);
     }, 60000); //1 minute
 
     return () => clearInterval(timer);
@@ -373,7 +400,7 @@ export default function ProfileScreen() {
               </>
             ) : (
               <>
-              {/* Edit mode: show input fields to update profile information */}
+                {/* Edit mode: show input fields to update profile information */}
                 <Text style={styles.sectionTitle}>Edit</Text>
 
                 <Text style={styles.label}>Display name</Text>
@@ -507,11 +534,15 @@ export default function ProfileScreen() {
                           }
                         });
                       }}
+                      onLongPress={() => deleteShopItem(item.id)}
                     >
                       <Image
                         source={{ uri: item.image_url }}
                         style={styles.uploadImage}
                       />
+                      <View style={styles.deleteBadge}>
+                        <Text style={styles.deleteBadgeText}>Hold to delete</Text>
+                      </View>
                     </Pressable>
                   )}
                 />
@@ -811,7 +842,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     minWidth: 120,
     paddingBottom: 10,
-    marginBottom:10,
+    marginBottom: 10,
   },
   billLabel: {
     color: "#fff",
@@ -825,6 +856,22 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: "900",
     marginVertical: 6,
+  },
+
+  //Delete button
+  deleteBadge: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(243, 6, 120, 0.85)',
+    paddingVertical: 2,
+    alignItems: 'center',
+  },
+  deleteBadgeText: {
+    color: '#fff',
+    fontSize: 8,
+    fontWeight: '900',
   },
 });
 
