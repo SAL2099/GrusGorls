@@ -86,6 +86,7 @@ export default function HomeScreen() {
     };
   }, []);
 
+  // function to check how old posts are with unregistered charity shops
   async function cleanupOldUnregisteredItems() {
     const { data, error } = await supabase
       .from("photos")
@@ -110,6 +111,7 @@ export default function HomeScreen() {
   async function loadInitial() {
     setLoading(true);
 
+    // runs clean up function
     await cleanupOldUnregisteredItems();
 
     const { data, error } = await supabase
