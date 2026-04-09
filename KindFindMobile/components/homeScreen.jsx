@@ -86,9 +86,31 @@ export default function HomeScreen() {
     };
   }, []);
 
+  async function cleanupOldUnregisteredItems() {
+    const { data, error } = await supabase
+      .from("photos")
+      .select("id, created_at")
+      .is("store_id", null);
+
+    if (error || !data) return;
+
+    const now = Date.now();
+    const weekMs = 7 * 24 * 60 * 60 * 1000;
+
+    const expired = data.filter(item => {
+      return now - new Date(item.created_at).getTime() >= weekMs;
+    });
+
+    for (const item of expired) {
+      await supabase.from("photos").delete().eq("id", item.id);
+    }
+  }
+
   // Function to load the initial set of items from the Supabase database
   async function loadInitial() {
     setLoading(true);
+
+    await cleanupOldUnregisteredItems();
 
     const { data, error } = await supabase
       .from("photos")

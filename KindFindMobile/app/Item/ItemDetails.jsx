@@ -255,7 +255,7 @@ export default function ItemDetails() {
           />
 
           <Text style={styles.title}>{parsedItem.title}</Text>
-          <Text style={styles.price}>£{parsedItem.price}</Text>
+          <Text style={styles.price}>£{(parsedItem.price).toFixed(2)}</Text>
 
           <View style={styles.section}>
             <Text style={styles.label}>Size</Text>
@@ -278,6 +278,16 @@ export default function ItemDetails() {
                   </View>
                 ))}
               </View>
+            </View>
+          )}
+
+          {/* USER VIEW - Warning */}
+          {!isStoreView && !isStoreMatch && (
+            <View style={styles.reserveButton}>
+              <Text style={styles.warningLabel}>Just so you know</Text>
+              <Text style={styles.warningText}>
+                KindFind cannot confirm that this item is still available at the specified location.
+              </Text>
             </View>
           )}
 
@@ -438,5 +448,20 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "600",
     color: "#CE6674",
+  },
+
+  warningLabel: {
+    color: "#FFF",
+    fontSize: 15,
+    fontWeight: "800",
+    textTransform: "uppercase",
+  },
+
+  warningText: {
+    color: "#FFF",
+    fontSize: 13,
+    margin: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
