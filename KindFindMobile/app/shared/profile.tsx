@@ -91,8 +91,8 @@ export default function ProfileScreen() {
       setUploads(photoData ?? []);
     }
 
-    // Fetch all photos associated with this shop's address
-    if (data.role === "store" && data.store_name && data.address) {
+    // Fetch all photos associated with this shop's unique id (if it's a store profile)
+    if (data.role === "store" && data.store_name && data.store_id) {
       const { data: shopData } = await supabase
         .from("photos")
         .select("*")
@@ -101,7 +101,8 @@ export default function ProfileScreen() {
         .eq("reserved", false)
         .order("created_at", { ascending: false });
 
-
+      console.log("store_id used:", data.store_id);
+      console.log("shopData:", shopData);
       setShopUploads(shopData ?? []);
     } else {
       setShopUploads([]);
