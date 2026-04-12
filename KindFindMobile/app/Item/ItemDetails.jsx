@@ -5,6 +5,7 @@ import { supabase } from "../../lib/supabase";
 import { useEffect, useState } from "react";
 import Screen from "../../components/Screen";
 import * as Notifications from 'expo-notifications';
+import StyledAlert from "../../components/StyledAlert";
 
 // ItemDetails screen shows detailed information about a specific item and allows users to reserve it or stores to mark it as collected
 export default function ItemDetails() {
@@ -18,6 +19,19 @@ export default function ItemDetails() {
   const [parsedItem, setParsedItem] = useState(null);
   const [isStoreMatch, setIsStoreMatch] = useState(false);
   const [user, setUser] = useState(null);
+
+  //Alert style
+  const [alertVisible, setAlertVisible] = useState(false);
+  const [alertContent, setAlertContent] = useState({ 
+    title: "", 
+    message: "", 
+    type: "" 
+  });
+
+  const triggerAlert = (title, message, type = "") => {
+    setAlertContent({ title, message, type });
+    setAlertVisible(true);
+  };
 
   // Load item depending on how the screen was opened
   useEffect(() => {
@@ -104,10 +118,10 @@ export default function ItemDetails() {
       return;
     }
 
-    Alert.alert(
+    triggerAlert(
       "Reserved!",
       `Your reservation number is ${reservationNumber}.`,
-      [{ text: "OK", onPress: () => router.replace("/(tabs)") }]
+      "GO_TABS"
     );
   };
 
@@ -148,10 +162,9 @@ export default function ItemDetails() {
 
     if (rpcError) {
       console.error("RPC error:", rpcError);
-      Alert.alert("Error", "Could not update user bill.");
+      triggerAlert("Error", "Could not update user bill.");
     } else {
-      Alert.alert("Collected", "Item marked as collected and user billed.");
-      router.replace("/(store)");
+      triggerAlert("Collected", "Item marked as collected and user billed.", "GO_STORE");
     }
   };
 
@@ -167,17 +180,16 @@ export default function ItemDetails() {
       .eq("id", Number(parsedItem.id));
 
     if (error) {
-      Alert.alert("Error", "Could not mark as ready.");
+      triggerAlert("Error", "Could not mark as ready.");
       return;
     }
 
-    Alert.alert("Success", "User has been notified to pick up the item!");
-    router.back();
+    triggerAlert("Success", "User has been notified to pick up the item!", "GO_BACK");
   };
 
   // Cancel reservation (store only)
   const handleCancelReservation = async () => {
-    Alert.alert(
+    triggerAlert(
       "Cancel Reservation",
       "Are you sure? The user will be notified and the item will return to the feed.",
       [
@@ -195,7 +207,7 @@ export default function ItemDetails() {
               .eq("id", Number(parsedItem.id));
 
             if (flagError) {
-              Alert.alert("Error", "Could not cancel reservation.");
+              triggerAlert("Error", "Could not cancel reservation.");
               return;
             }
 
@@ -213,13 +225,11 @@ export default function ItemDetails() {
               .eq("id", Number(parsedItem.id));
 
             if (clearError) {
-              Alert.alert("Error", "Could not clear reservation.");
+              triggerAlert("Error", "Could not clear reservation.");
               return;
             }
 
-            Alert.alert("Cancelled", "Reservation has been cancelled.", [
-              { text: "OK", onPress: () => router.replace("/(store)") }
-            ]);
+            triggerAlert("Cancelled", "Reservation has been cancelled.", "GO_STORE");
           },
         },
       ]
@@ -332,9 +342,21 @@ export default function ItemDetails() {
             </View>
           )}
         </View>
-
         <View style={{ height: 40 }} />
       </ScrollView>
+
+      {/* The Styled Alert */}
+      <StyledAlert
+        visible={alertVisible}
+        title={alertContent.title}
+        message={alertContent.message}
+        onClose={() => {
+          setAlertVisible(false);
+          if (alertContent.type === "GO_TABS") router.replace("/(tabs)");
+          if (alertContent.type === "GO_STORE") router.replace("/(store)");
+          if (alertContent.type === "GO_BACK") router.back();
+        }}
+      />
     </Screen>
   );
 }

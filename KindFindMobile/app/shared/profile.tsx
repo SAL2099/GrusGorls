@@ -9,6 +9,7 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view
 import { validatePassword, getPasswordRequirements } from "../../lib/validation";
 import { Ionicons } from "@expo/vector-icons"; //Icon
 import { Linking } from 'react-native';
+import StyledAlert from "../../components/StyledAlert";
 
 
 const screenWidth = Dimensions.get("window").width;
@@ -43,6 +44,15 @@ export default function ProfileScreen() {
   const [reservations, setReservations] = useState<any[]>([]);
   const [pastReservations, setPastReservations] = useState<any[]>([]);
 
+  // State for styled alert
+    const [alertVisible, setAlertVisible] = useState(false);
+    const [alertContent, setAlertContent] = useState({ title: "", message: "" });
+
+    const triggerAlert = (title: string, message: string) => {
+        setAlertContent({ title, message });
+        setAlertVisible(true);
+    };
+
   // Function to load the user's profile data from the database
   async function loadProfile() {
     setLoading(true);
@@ -63,7 +73,7 @@ export default function ProfileScreen() {
       .single();
 
     if (error) {
-      Alert.alert("Error", error.message);
+      triggerAlert("Error", error.message);
       setProfile(null);
       setLoading(false);
       return;
@@ -85,7 +95,7 @@ export default function ProfileScreen() {
       .order("created_at", { ascending: false });
 
     if (photoError) {
-      Alert.alert("Photo error", photoError.message);
+      triggerAlert("Photo error", photoError.message);
       setUploads([]);
     } else {
       setUploads(photoData ?? []);
@@ -139,7 +149,7 @@ export default function ProfileScreen() {
     if (!profile?.id) return;
 
     if (!displayName.trim()) {
-      Alert.alert("Error missing:", "Display name is required.");
+      triggerAlert("Error missing:", "Display name is required.");
       return;
     }
 
@@ -147,7 +157,7 @@ export default function ProfileScreen() {
 
     if (profile.role === "store") {
       if (!storeName.trim() || !openingTimes.trim() || !address.trim()) {
-        Alert.alert("Missing store info", "Store name, opening times, and address are required.");
+        triggerAlert("Missing store info", "Store name, opening times, and address are required.");
         return;
       }
       updates.store_name = storeName.trim();
@@ -158,7 +168,7 @@ export default function ProfileScreen() {
     const { error } = await supabase.from("profiles").update(updates).eq("id", profile.id);
 
     if (error) {
-      Alert.alert("Update failed", error.message);
+      triggerAlert("Update failed", error.message);
       return;
     }
 
@@ -172,10 +182,7 @@ export default function ProfileScreen() {
     const validation = validatePassword(newPassword);
 
     if (!validation.isValid) {
-      Alert.alert(
-        "Invalid Password",
-        validation.error
-      );
+      triggerAlert("Invalid Password", validation.error);
       return;
     }
 
@@ -185,9 +192,9 @@ export default function ProfileScreen() {
     });
 
     if (error) {
-      Alert.alert("Error", error.message);
+      triggerAlert("Error", error.message);
     } else {
-      Alert.alert("Success", "Password updated successfully!");
+      triggerAlert("Success", "Password updated successfully!");
       setNewPassword("");
       setChangingPassword(false);
     }
@@ -217,7 +224,7 @@ export default function ProfileScreen() {
               .eq("id", itemId);
 
             if (error) {
-              Alert.alert("Error", error.message);
+              triggerAlert("Error", error.message);
             } else {
               await loadProfile();
             }
@@ -308,7 +315,7 @@ export default function ProfileScreen() {
                             .update({ monthly_total: 0 })
                             .eq("id", profile.id);
                           await loadProfile();
-                          Alert.alert("Paid!", "Your monthly bill has been cleared.");
+                          triggerAlert("Paid!", "Your monthly bill has been cleared.");
                         }}
                       >
                         <Text style={styles.buttonText}>Pay Bill</Text>
@@ -643,6 +650,13 @@ export default function ProfileScreen() {
           )}
         </View>
       </KeyboardAwareScrollView>
+      {/* The Styled Alert */}
+      <StyledAlert 
+        visible={alertVisible}
+        title={alertContent.title}
+        message={alertContent.message}
+        onClose={() => setAlertVisible(false)}
+      />
     </Screen>
   );
 }

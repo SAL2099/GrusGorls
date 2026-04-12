@@ -3,6 +3,7 @@ import { View, Text, TextInput, Pressable, StyleSheet, Alert, Image, ScrollView,
 import { router } from "expo-router"; // Import the router from expo-router for navigation between screens
 import Screen from "../../components/Screen"; // Import a custom Screen component for consistent styling and layout across screens
 import { supabase } from "../../lib/supabase";
+import StyledAlert from "../../components/StyledAlert";
 
 // The LoginScreen component provides a user interface for users to log in to their accounts using email and password authentication
 export default function LoginScreen() {
@@ -13,10 +14,19 @@ export default function LoginScreen() {
     // Ref for keyboard navigation
     const passwordRef = useRef<TextInput>(null);
 
+    // State for styled alert
+    const [alertVisible, setAlertVisible] = useState(false);
+    const [alertContent, setAlertContent] = useState({ title: "", message: "" });
+
+    const triggerAlert = (title: string, message: string) => {
+        setAlertContent({ title, message });
+        setAlertVisible(true);
+    };
+
     // Function to handle the login process when the user submits their email and password
     async function login() {
         if (!email || !password) {
-            Alert.alert("Missing info", "Please enter email and password.");
+            triggerAlert("Missing info", "Please enter email and password.");
             return;
         }
 
@@ -46,7 +56,7 @@ export default function LoginScreen() {
 
 
         } catch (e: any) {
-            Alert.alert("Login failed", e?.message ?? "Try again");
+            triggerAlert("Login failed", e?.message ?? "Try again");
         } finally {
             setLoading(false);
         }
@@ -55,7 +65,7 @@ export default function LoginScreen() {
     // Function to handle the forgot password functionality, which sends a reset code to the user's email and navigates them to the reset password screen
     async function handleForgotPassword() {
         if (!email) {
-            Alert.alert("Email required", "Please enter your email address to receive a reset code.");
+            triggerAlert("Email required", "Please enter your email address to receive a reset code.");
             return;
         }
 
@@ -66,7 +76,7 @@ export default function LoginScreen() {
 
             if (error) throw error;
 
-            Alert.alert("Code Sent", "Check your inbox for a 6-digit verification code.");
+            triggerAlert("Code Sent", "Check your inbox for a 6-digit verification code.");
 
             // Navigate to reset screen and pass the email so the user doesn't have to type it again
             router.push({
@@ -74,7 +84,7 @@ export default function LoginScreen() {
                 params: { email: email }
             });
         } catch (e: any) {
-            Alert.alert("Error", e.message);
+            triggerAlert("Error", e.message);
         } finally {
             setLoading(false);
         }
@@ -144,6 +154,14 @@ export default function LoginScreen() {
                     </View>
                 </ScrollView>
             </KeyboardAvoidingView>
+
+            {/* The Styled Alert */}
+            <StyledAlert
+                visible={alertVisible}
+                title={alertContent.title}
+                message={alertContent.message}
+                onClose={() => setAlertVisible(false)}
+            />
         </Screen>
     );
 }

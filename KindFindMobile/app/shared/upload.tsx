@@ -13,6 +13,7 @@ import { uploadImage } from "../../lib/uploadImage";
 import { supabase } from "../../lib/supabase";
 import Screen from "../../components/Screen";
 import { fetchOsmShops } from "../../lib/osmService";
+import StyledAlert from "../../components/StyledAlert";
 
 type UserLocation = {
   latitude: number;
@@ -53,6 +54,15 @@ export default function UploadScreen() {
   // Polaroid State & Animation
   const [isPrinting, setIsPrinting] = useState(false);
   const slideAnim = useRef(new Animated.Value(-200)).current;
+
+  //Styled alerts
+  const [alertVisible, setAlertVisible] = useState(false);
+  const [alertContent, setAlertContent] = useState({ title: "", message: "" });
+
+  const triggerAlert = (title: string, message: string) => {
+    setAlertContent({ title, message });
+    setAlertVisible(true);
+  };
 
 
   //Current tags
@@ -120,7 +130,7 @@ export default function UploadScreen() {
   const pickAndUpload = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      alert("Permission to access photos is required!");
+      triggerAlert("Permission required", "Permission to access photos is required!");
       return;
     }
 
@@ -151,7 +161,7 @@ export default function UploadScreen() {
       !price.trim() ||
       selectedTags.length < 1
     ) {
-      alert("Please fill in all fields and select at least 1 tag.");
+      triggerAlert("Error", "Please fill in all fields and select at least 1 tag.");
       return;
     }
 
@@ -192,7 +202,7 @@ export default function UploadScreen() {
     ]);
 
     if (error) {
-      Alert.alert("Error", "Failed to save info");
+      triggerAlert("Error", "Failed to save info");
     } else {
       setIsPrinting(true);
 
@@ -205,7 +215,7 @@ export default function UploadScreen() {
         setLocation("");
         setPrice("");
         setSelectedTags([]);
-        Alert.alert("Success!", "Your photo has been developed.");
+        triggerAlert("Success!", "Your photo has been developed.");
       }, 4500); // Slightly longer than the animation
     }
   };
@@ -218,7 +228,7 @@ export default function UploadScreen() {
       }
 
       if (prev.length >= 5) {
-        Alert.alert("Tag limit", "You can select up to 5 tags.");
+        triggerAlert("Tag limit", "You can select up to 5 tags.");
         return prev;
       }
 
@@ -375,6 +385,14 @@ export default function UploadScreen() {
           </KeyboardAwareScrollView>
         )}
       </View>
+
+      {/* Styled alert*/}
+      <StyledAlert 
+        visible={alertVisible}
+        title={alertContent.title}
+        message={alertContent.message}
+        onClose={() => setAlertVisible(false)}
+      />
 
       {/* Printing modal */}
       {isPrinting && (

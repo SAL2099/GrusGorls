@@ -8,6 +8,8 @@ import { Dropdown } from "react-native-element-dropdown"; // Dropdown component 
 import { fetchOsmShops } from "../../lib/osmService"; // Function to fetch nearby charity shops
 import { validatePassword, getPasswordRequirements } from "../../lib/validation";
 import { Ionicons } from "@expo/vector-icons"; //Icon
+import StyledAlert from "../../components/StyledAlert";
+
 
 // The SignUpScreen component allows users to create a new account, either as a regular user or a store owner, and handles the sign-up logic
 export default function SignUpScreen() {
@@ -33,6 +35,16 @@ export default function SignUpScreen() {
     //Password
     const [showPassword, setShowPassword] = useState(false);
 
+    // State for styled alert
+    const [alertVisible, setAlertVisible] = useState(false);
+    const [alertContent, setAlertContent] = useState({ title: "", message: "" });
+
+    const triggerAlert = (title: string, message: string) => {
+        setAlertContent({ title, message });
+        setAlertVisible(true);
+    };
+
+
     // Load nearby shops when the store role is selected
     useEffect(() => {
         async function loadShops() {
@@ -43,7 +55,7 @@ export default function SignUpScreen() {
 
                 const { status } = await Location.requestForegroundPermissionsAsync();
                 if (status !== "granted") {
-                    Alert.alert("Location needed", "Please allow location access to find your store.");
+                    triggerAlert("Location needed", "Please allow location access to find your store.");
                     return;
                 }
 
@@ -72,7 +84,7 @@ export default function SignUpScreen() {
 
             } catch (error) {
                 console.log("Failed to fetch nearby shops:", error);
-                Alert.alert("Error", "Could not load nearby shops.");
+                triggerAlert("Error", "Could not load nearby shops.");
             } finally {
                 setLoadingShops(false);
             }
@@ -84,7 +96,7 @@ export default function SignUpScreen() {
     // Function to handle dropdown selection for a store
     function handleStoreSelection(item: any) {
         if (item.value === "manual") {
-            Alert.alert(
+            triggerAlert(
                 "Store not listed",
                 "Please contact support to have your store added."
             );
@@ -110,18 +122,18 @@ export default function SignUpScreen() {
     //Function for signing up a new user or store owner, creates an account with Supabase, and inserting the user's profile into the database
     async function signUp() {
         if (!email || !password || !displayName.trim()) {
-            Alert.alert("Missing info", "Please fill in all fields.");
+            triggerAlert("Missing info", "Please fill in all fields.");
             return;
         }
 
         const validation = validatePassword(password);
         if (!validation.isValid) {
-            Alert.alert("Weak Password", validation.error);
+            triggerAlert("Weak Password", validation.error);
             return;
         }
 
         if (role === "store" && !selectedShop) {
-            Alert.alert("Store missing", "Please select a store.");
+            triggerAlert("Store missing", "Please select a store.");
             return;
         }
 
@@ -137,7 +149,7 @@ export default function SignUpScreen() {
 
                 if (existingStore) {
                     setLoading(false);
-                    return Alert.alert("Taken", "This store is already registered.");
+                    return triggerAlert("Taken", "This store is already registered.");
                 }
             }
 
@@ -151,7 +163,7 @@ export default function SignUpScreen() {
             const userId = authData.user?.id;
 
             if (!userId) {
-                Alert.alert("Verify Email", "Please check your inbox to confirm your account.");
+                triggerAlert("Verify Email", "Please check your inbox to confirm your account.");
                 router.replace("/(auth)/login");
                 return;
             }
@@ -180,7 +192,7 @@ export default function SignUpScreen() {
             router.replace(role === "store" ? "/(store)/tabs" : "/(tabs)");
 
         } catch (e: any) {
-            Alert.alert("Sign up failed", e?.message ?? "An error occurred");
+            triggerAlert("Sign up failed", e?.message ?? "An error occurred");
         } finally {
             setLoading(false);
         }
@@ -323,6 +335,14 @@ export default function SignUpScreen() {
                         <Pressable onPress={() => router.push("/(auth)/login")}>
                             <Text style={styles.link}>Already have an account? Log in</Text>
                         </Pressable>
+
+                        {/* The Styled Alert */}
+                        <StyledAlert
+                            visible={alertVisible}
+                            title={alertContent.title}
+                            message={alertContent.message}
+                            onClose={() => setAlertVisible(false)}
+                        />
                     </View>
                 </ScrollView>
             </KeyboardAvoidingView>

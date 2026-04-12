@@ -4,6 +4,7 @@ import { View, Text, Image, StyleSheet, ScrollView, Alert, Pressable, ActivityIn
 import { useEffect, useState } from "react";
 import Screen from "../../components/Screen";
 import { supabase } from "../../lib/supabase";
+import StyledAlert from "../../components/StyledAlert";
 
 //Function to get ListingDetails that the user has posted
 export default function ListingDetail() {
@@ -15,6 +16,15 @@ export default function ListingDetail() {
     const router = useRouter();
 
     const [currentUser, setCurrentUser] = useState<any>(null);
+
+    // State for styled alert
+    const [alertVisible, setAlertVisible] = useState(false);
+    const [alertContent, setAlertContent] = useState({ title: "", message: "" });
+
+    const triggerAlert = (title: string, message: string) => {
+        setAlertContent({ title, message });
+        setAlertVisible(true);
+    };
 
     useEffect(() => {
         async function getUser() {
@@ -35,7 +45,7 @@ export default function ListingDetail() {
                 .single();
 
             if (error || !data) {
-                Alert.alert("Error", "Item not found or has been deleted.");
+                triggerAlert("Error", "Item not found or has been deleted.");
                 router.back();
             } else {
                 setItem(data);
@@ -57,7 +67,7 @@ export default function ListingDetail() {
                     const user = userData?.user;
 
                     if (!user) {
-                        Alert.alert("Error", "You must be logged in.");
+                        triggerAlert("Error", "You must be logged in.");
                         return;
                     }
 
@@ -68,7 +78,7 @@ export default function ListingDetail() {
 
                     if (error) {
                         console.log("DELETE ERROR:", error);
-                        Alert.alert("Error", "Could not delete: " + error.message);
+                       triggerAlert("Error", "Could not delete: " + error.message);
                     } else {
                         router.back();
                     }
@@ -153,26 +163,34 @@ export default function ListingDetail() {
                     </View>
                 )}
             </ScrollView>
+
+            {/* The Styled Alert */}
+            <StyledAlert
+                visible={alertVisible}
+                title={alertContent.title}
+                message={alertContent.message}
+                onClose={() => setAlertVisible(false)}
+            />
         </Screen>
     );
 }
 
 // Function to calculate remaining time for pickup based on the ready_for_pickup_at timestamp
 const getRemainingTime = (readyAt: any) => {
-  if (!readyAt) return null;
+    if (!readyAt) return null;
 
-  const expiryDate = new Date(readyAt);
-  expiryDate.setHours(expiryDate.getHours() + 48);
+    const expiryDate = new Date(readyAt);
+    expiryDate.setHours(expiryDate.getHours() + 48);
 
-  const now = new Date();
-  const diff = expiryDate.getTime() - now.getTime();
+    const now = new Date();
+    const diff = expiryDate.getTime() - now.getTime();
 
-  if (diff <= 0) return "Expired";
+    if (diff <= 0) return "Expired";
 
-  const hours = Math.floor(diff / (1000 * 60 * 60));
-  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
 
-  return `${hours}h ${minutes}m left`;
+    return `${hours}h ${minutes}m left`;
 };
 
 // Styles for consistancy

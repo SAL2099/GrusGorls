@@ -5,11 +5,13 @@ import { supabase } from "../../lib/supabase";
 import Screen from "../../components/Screen";
 import { Ionicons } from "@expo/vector-icons";
 import { validatePassword, getPasswordRequirements } from "../../lib/validation";
+import StyledAlert from "../../components/StyledAlert";
+
 
 //ResetPasswordScreen allowing password resets
 export default function ResetPasswordScreen() {
     const { email } = useLocalSearchParams();
-    
+
     const [token, setToken] = useState("");
     const [password, setPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
@@ -20,20 +22,29 @@ export default function ResetPasswordScreen() {
     const passwordRef = useRef<TextInput>(null);
     const confirmPasswordRef = useRef<TextInput>(null);
 
+    // State for styled alert
+    const [alertVisible, setAlertVisible] = useState(false);
+    const [alertContent, setAlertContent] = useState({ title: "", message: "" });
+
+    const triggerAlert = (title: string, message: string) => {
+        setAlertContent({ title, message });
+        setAlertVisible(true);
+    };
+
     async function handleReset() {
         if (!token || !password || !confirmPassword) {
-            Alert.alert("Missing info", "Please fill in all fields.");
+            triggerAlert("Missing info", "Please fill in all fields.");
             return;
         }
 
         const validation = validatePassword(password);
         if (!validation.isValid) {
-            Alert.alert("Weak Password", validation.error);
+            triggerAlert("Weak Password", validation.error);
             return;
         }
 
         if (password !== confirmPassword) {
-            Alert.alert("Error", "Passwords do not match.");
+            triggerAlert("Error", "Passwords do not match.");
             return;
         }
 
@@ -53,11 +64,11 @@ export default function ResetPasswordScreen() {
 
             if (updateError) throw updateError;
 
-            Alert.alert("Success!", "Your password has been updated.");
+            triggerAlert("Success!", "Your password has been updated.");
             router.replace("/(auth)/login");
 
         } catch (e: any) {
-            Alert.alert("Reset Failed", e.message || "Invalid code or request expired.");
+            triggerAlert("Reset Failed", e.message || "Invalid code or request expired.");
         } finally {
             setLoading(false);
         }
@@ -65,11 +76,11 @@ export default function ResetPasswordScreen() {
 
     return (
         <Screen>
-            <KeyboardAvoidingView 
+            <KeyboardAvoidingView
                 behavior={Platform.OS === "ios" ? "padding" : "height"}
                 style={{ flex: 1 }}
             >
-                <ScrollView 
+                <ScrollView
                     contentContainerStyle={styles.scrollContent}
                     keyboardShouldPersistTaps="handled"
                     showsVerticalScrollIndicator={false}
@@ -144,8 +155,8 @@ export default function ResetPasswordScreen() {
                             onSubmitEditing={handleReset}
                         />
 
-                        <Pressable 
-                            style={[styles.button, loading && { opacity: 0.7 }]} 
+                        <Pressable
+                            style={[styles.button, loading && { opacity: 0.7 }]}
                             onPress={handleReset}
                             disabled={loading}
                         >
@@ -157,6 +168,14 @@ export default function ResetPasswordScreen() {
                         <Pressable onPress={() => router.back()}>
                             <Text style={styles.link}>Back to Login</Text>
                         </Pressable>
+
+                        {/* The Styled Alert */}
+                        <StyledAlert
+                            visible={alertVisible}
+                            title={alertContent.title}
+                            message={alertContent.message}
+                            onClose={() => setAlertVisible(false)}
+                        />
                     </View>
                 </ScrollView>
             </KeyboardAvoidingView>
@@ -197,10 +216,10 @@ const styles = StyleSheet.create({
     passwordContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: "#121C0C", 
+        backgroundColor: "#121C0C",
         borderRadius: 12,
-        marginBottom: 10, 
-        height: 50, 
+        marginBottom: 10,
+        height: 50,
         overflow: 'hidden',
     },
     Passwordinput: {
