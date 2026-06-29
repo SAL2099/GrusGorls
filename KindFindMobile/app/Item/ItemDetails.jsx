@@ -189,7 +189,7 @@ export default function ItemDetails() {
 
   // Cancel reservation (store only)
   const handleCancelReservation = async () => {
-    triggerAlert(
+    Alert.alert( // Changed triggerAlert to Alert.alert
       "Cancel Reservation",
       "Are you sure? The user will be notified and the item will return to the feed.",
       [
@@ -229,6 +229,7 @@ export default function ItemDetails() {
               return;
             }
 
+            // We can safely use triggerAlert here for the success message
             triggerAlert("Cancelled", "Reservation has been cancelled.", "GO_STORE");
           },
         },
