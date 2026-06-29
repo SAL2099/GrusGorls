@@ -189,7 +189,7 @@ export default function ItemDetails() {
 
   // Cancel reservation (store only)
   const handleCancelReservation = async () => {
-    Alert.alert( // Changed triggerAlert to Alert.alert
+    Alert.alert( 
       "Cancel Reservation",
       "Are you sure? The user will be notified and the item will return to the feed.",
       [
@@ -200,7 +200,7 @@ export default function ItemDetails() {
           onPress: async () => {
             if (!parsedItem) return;
 
-            //Set cancelled flag FIRST while reserved_by still matches the realtime filter
+            //Set cancelled flag first while reserved_by still matches the realtime filter
             const { error: flagError } = await supabase
               .from("photos")
               .update({ cancelled_by_store: true })
@@ -220,7 +220,7 @@ export default function ItemDetails() {
                 reserved_at: null,
                 reservation_number: null,
                 ready_for_pickup_at: null,
-                cancelled_by_store: false, // clean up the flag
+                cancelled_by_store: false, 
               })
               .eq("id", Number(parsedItem.id));
 
@@ -228,8 +228,6 @@ export default function ItemDetails() {
               triggerAlert("Error", "Could not clear reservation.");
               return;
             }
-
-            // We can safely use triggerAlert here for the success message
             triggerAlert("Cancelled", "Reservation has been cancelled.", "GO_STORE");
           },
         },
