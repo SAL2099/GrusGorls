@@ -139,7 +139,7 @@ export default function ListingDetail() {
                 </View>
 
                 {/* Show Pickup Timer on Detail Page */}
-                {currentUser?.id === item.reserved_by && item.ready_for_pickup_at && (
+                {currentUser?.id === item.reserved_by && item.ready_for_pickup_at && !item.collected_at &&(
                     <View style={[styles.reservationInfoCard, { backgroundColor: '#4CAF50', marginBottom: 0 }]}>
                         <Text style={styles.resLabel}>READY FOR PICKUP</Text>
                         <Text style={styles.resNumber}>{getRemainingTime(item.ready_for_pickup_at)}</Text>

@@ -437,7 +437,7 @@ const styles = StyleSheet.create({
   backBtn: {
     backgroundColor: "#CE6674",
     padding: 15,
-    marginHorizontal: 16,
+    marginLeft: 0,
     marginTop: 20,
     borderRadius: 12,
     alignItems: "center",
