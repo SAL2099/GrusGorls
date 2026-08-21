@@ -1,22 +1,23 @@
-import React, { useEffect, useState } from "react"; // React imports
-import { View, Text, StyleSheet, Modal, Pressable, ActivityIndicator } from "react-native"; // React Native components
-import MapView, { Marker, Region } from "react-native-maps"; // Map components
-import * as Location from "expo-location"; // Expo Location for getting user location
-import Screen from "../../components/Screen"; // Custom Screen component (probably adds padding and background)
+import React, { useEffect, useState } from "react";
+import { View, Text, StyleSheet, Modal, Pressable, ActivityIndicator } from "react-native";
+import MapView, { Marker, Region } from "react-native-maps";
+import * as Location from "expo-location";
+import Screen from "../../components/Screen";
+import { useRouter } from "expo-router";
+import { supabase } from "../../lib/supabase";
 
-const ABERDEEN_REGION: Region = { // Default region (centered on Aberdeen) if location permission is not granted
+const ABERDEEN_REGION: Region = {
   latitude: 57.1497,
   longitude: -2.0943,
   latitudeDelta: 0.03,
   longitudeDelta: 0.03,
 };
 
-//Distance helpers (km) to work out co-ordinates for the map and show distance to shops copied from https://stackoverflow.com/a/21623206/466693
 function deg2rad(deg: number) {
   return deg * (Math.PI / 180);
 }
 
-function distanceKm(aLat: number, aLng: number, bLat: number, bLng: number) { // Haversine formula to calculate distance between two lat/lng points
+function distanceKm(aLat: number, aLng: number, bLat: number, bLng: number) {
   const R = 6371;
   const dLat = deg2rad(bLat - aLat);
   const dLng = deg2rad(bLng - aLng);
@@ -30,7 +31,6 @@ function distanceKm(aLat: number, aLng: number, bLat: number, bLng: number) { //
   return R * c;
 }
 
-//Overpass fetch (tries multiple servers to reduce errors)
 async function fetchOsmShops(lat: number, lng: number, radiusMeters: number) {
   const endpoints = [
     "https://overpass-api.de/api/interpreter",
@@ -38,7 +38,6 @@ async function fetchOsmShops(lat: number, lng: number, radiusMeters: number) {
     "https://overpass.nchc.org.tw/api/interpreter",
   ];
 
-  // increase timeout a bit to reduce 504s
   const query = `
     [out:json][timeout:45];
     (
@@ -48,26 +47,26 @@ async function fetchOsmShops(lat: number, lng: number, radiusMeters: number) {
     out tags center;
   `;
 
-  let lastErr: any = null; // to keep track of the last error in case all endpoints fail
+  let lastErr: any = null;
 
-  for (const url of endpoints) { // try each endpoint in order
+  for (const url of endpoints) {
     try {
-      const res = await fetch(url, {  // POST request to Overpass API
+      const res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
         body: `data=${encodeURIComponent(query)}`,
       });
 
-      if (!res.ok) { // if response is not ok, save error and try next endpoint
+      if (!res.ok) {
         lastErr = new Error(`Overpass error: ${res.status}`);
         continue;
       }
 
-      const data = await res.json(); // parse JSON response
-      const elements = Array.isArray(data?.elements) ? data.elements : []; // ensure elements is an array
+      const data = await res.json();
+      const elements = Array.isArray(data?.elements) ? data.elements : [];
 
-      return elements // returns the info we need about the shops
-        .map((el: any) => { // extract lat/lng (nodes have lat/lon, ways/relations have center.lat/lon)
+      return elements
+        .map((el: any) => {
           const latOut = el.lat ?? el.center?.lat;
           const lngOut = el.lon ?? el.center?.lon;
           if (typeof latOut !== "number" || typeof lngOut !== "number") return null;
@@ -84,9 +83,9 @@ async function fetchOsmShops(lat: number, lng: number, radiusMeters: number) {
           ].filter(Boolean);
           const address = addressParts.length ? addressParts.join(" ") : undefined;
 
-          const kind = tags.shop; // "charity" or "second_hand" overpass uses both
+          const kind = tags.shop;
 
-          return { // create a shop object with the relevant info
+          return {
             id: `${el.type}-${el.id}`,
             name,
             kind,
@@ -97,34 +96,35 @@ async function fetchOsmShops(lat: number, lng: number, radiusMeters: number) {
             address,
           };
         })
-        .filter(Boolean); // filter out any nulls (e.g. from missing lat/lng)
-    } catch (e) { // if fetch or parsing fails, save error and try next endpoint
+        .filter(Boolean);
+    } catch (e) {
       lastErr = e;
     }
   }
 
-  throw lastErr ?? new Error("Failed to load shops"); // if all endpoints fail, throw the last error encountered
+  throw lastErr ?? new Error("Failed to load shops");
 }
 
-export default function MapScreen() { // Main component for the Map tab
-  // State variables
+export default function MapScreen() {
+  const router = useRouter();
+
   const [region, setRegion] = useState<Region>(ABERDEEN_REGION);
   const [userCoords, setUserCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [loadingLoc, setLoadingLoc] = useState(true);
 
-  // Shop data states
   const [shops, setShops] = useState<any[]>([]);
   const [loadingShops, setLoadingShops] = useState(false);
   const [shopsError, setShopsError] = useState<string | null>(null);
 
-  // Radius state in KM
   const [radiusKm, setRadiusKm] = useState<number>(3);
   const [lastSuccessRadiusKm, setLastSuccessRadiusKm] = useState<number | null>(null);
 
-  // Selected shop for details modal
+  // Selected shop for modal + matching registered profile state
   const [selectedShop, setSelectedShop] = useState<any>(null);
+  const [registeredProfile, setRegisteredProfile] = useState<any>(null);
+  const [checkingProfile, setCheckingProfile] = useState(false);
 
-  //Get user location once
+  // Get user location once
   useEffect(() => {
     (async () => {
       try {
@@ -150,13 +150,13 @@ export default function MapScreen() { // Main component for the Map tab
     })();
   }, []);
 
-  //Fetch shops whenever location or radius changes
+  // Fetch shops whenever location or radius changes
   useEffect(() => {
-    if (!userCoords) return; // can only fetch if we have user coordinates
+    if (!userCoords) return;
 
-    const radiusMeters = radiusKm * 1000; // convert km to meters for the Overpass query
+    const radiusMeters = radiusKm * 1000;
 
-    (async () => { //added try/catch to reduce errors and keep showing shops if a fetch fails (common with Overpass)
+    (async () => {
       try {
         setLoadingShops(true);
         setShopsError(null);
@@ -164,21 +164,48 @@ export default function MapScreen() { // Main component for the Map tab
         const results = await fetchOsmShops(userCoords.lat, userCoords.lng, radiusMeters);
 
         setShops(results);
-        setLastSuccessRadiusKm(radiusKm); //remember which radius worked
+        setLastSuccessRadiusKm(radiusKm);
       } catch (e: any) {
-        //keep current shops on error (don’t wipe) so at least something is shown, but show error message and remember error
         setShopsError(e?.message ?? "Failed to load shops");
       } finally {
         setLoadingShops(false);
       }
     })();
-  }, [userCoords, radiusKm]); //refetch shops whenever user coordinates or radius changes
+  }, [userCoords, radiusKm]);
 
-  const shownRadius = lastSuccessRadiusKm ?? radiusKm; // show the last successfully loaded radius in the UI, even if the user has changed
+  // Check Supabase if the pressed map pin corresponds to a registered store account
+  useEffect(() => {
+    if (!selectedShop) {
+      setRegisteredProfile(null);
+      return;
+    }
+
+    (async () => {
+      setCheckingProfile(true);
+      const cleanName = selectedShop.name.trim();
+
+      const { data } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("role", "store")
+        .or(`store_name.ilike.%${cleanName}%,display_name.ilike.%${cleanName}%`)
+        .limit(1);
+
+      if (data && data.length > 0) {
+        setRegisteredProfile(data[0]);
+      } else {
+        setRegisteredProfile(null);
+      }
+      setCheckingProfile(false);
+    })();
+  }, [selectedShop]);
+
+  const shownRadius = lastSuccessRadiusKm ?? radiusKm;
+
   return (
     <Screen>
       <View style={styles.container}>
-        {/*Radius selection and status messages */}
+        {/* Radius selection controls */}
         <View style={styles.controls}>
           <Text style={styles.controlsTitle}>Radius</Text>
 
@@ -224,7 +251,6 @@ export default function MapScreen() { // Main component for the Map tab
         {/* Map */}
         <View style={styles.mapWrap}>
           {loadingLoc ? (
-            /* Loading Overlay for GPS */
             <View style={styles.loading}>
               <ActivityIndicator />
               <Text style={styles.loadingText}>Getting location…</Text>
@@ -250,7 +276,7 @@ export default function MapScreen() { // Main component for the Map tab
                   key={shop.id}
                   coordinate={{ latitude: shop.lat, longitude: shop.lng }}
                   title={shop.name}
-                  description={shop.label ?? ""} 
+                  description={shop.label ?? ""}
                   onPress={() => setSelectedShop(shop)}
                 />
               ))}
@@ -258,22 +284,19 @@ export default function MapScreen() { // Main component for the Map tab
           )}
         </View>
 
-        {/* Details modal */}
-        {/* Modal to show shop details when a marker is pressed */}
+        {/* Details Modal */}
         <Modal
           visible={!!selectedShop}
           transparent
           animationType="slide"
           onRequestClose={() => setSelectedShop(null)}
         >
-          <View style={styles.modalBackdrop}> 
-            {/* Backdrop to dim the background and close modal when pressed */}
+          <View style={styles.modalBackdrop}>
             <Pressable
               style={StyleSheet.absoluteFill}
               onPress={() => setSelectedShop(null)}
             />
 
-            {/* Modal card with shop details */}
             <View style={styles.modalCard}>
               <Text style={styles.modalTitle}>{selectedShop?.name}</Text>
 
@@ -296,6 +319,30 @@ export default function MapScreen() { // Main component for the Map tab
                 </Text>
               ) : null}
 
+              {/* Profile Navigation or Status */}
+              {checkingProfile ? (
+                <ActivityIndicator style={{ marginTop: 12 }} color="#CE6674" />
+              ) : registeredProfile ? (
+                <Pressable
+                  style={styles.profileBtn}
+                  onPress={() => {
+                    setSelectedShop(null);
+
+                    router.push({
+                      pathname: "/store-profile",
+                      params: {
+                        profileId: registeredProfile.id,
+                      },
+                    });
+                  }}
+                >
+                  <Text style={styles.profileBtnText}>View Shop Profile</Text>
+                </Pressable>
+
+              ) : (
+                <Text style={styles.unregisteredText}>Unregistered Charity Shop</Text>
+              )}
+
               {/* Close button */}
               <Pressable style={styles.closeBtn} onPress={() => setSelectedShop(null)}>
                 <Text style={styles.closeBtnText}>Close</Text>
@@ -308,99 +355,111 @@ export default function MapScreen() { // Main component for the Map tab
   );
 }
 
-// Styles for the MapScreen component
 const styles = StyleSheet.create({
-
-  // Main screen layout
   container: { flex: 1 },
 
-  // Control Panel Top UI 
-  controls: { 
-    paddingHorizontal: 14, 
-    paddingTop: 10, 
-    paddingBottom: 10 
+  controls: {
+    paddingHorizontal: 14,
+    paddingTop: 10,
+    paddingBottom: 10
   },
 
-  controlsTitle: { 
-    color: "#fff", 
-    fontSize: 16, 
-    fontWeight: "700", 
-    marginBottom: 6 
+  controlsTitle: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "700",
+    marginBottom: 6
   },
 
-  // Radius Selection Pills 
-  row: { 
-    flexDirection: "row", 
-    alignItems: "center", 
-    flexWrap: "wrap", 
-    gap: 8 
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: 8
   },
 
   pill: {
     paddingHorizontal: 12,
     paddingVertical: 7,
-    borderRadius: 999, // Makes the button fully rounded
+    borderRadius: 999,
     backgroundColor: "#CE6674"
   },
 
-  pillSelected: { backgroundColor: "#f30678" }, // Highlight color for active radius
+  pillSelected: { backgroundColor: "#f30678" },
   pillText: { color: "#fff", fontWeight: "700" },
   valueText: { color: "#fff", marginLeft: 6, opacity: 0.9 },
 
-  // feedback text for results, loading state, errors, and hints
-  resultsText: { 
-    color: "#fff", 
-    opacity: 0.85, 
-    marginTop: 8 
+  resultsText: {
+    color: "#fff",
+    opacity: 0.85,
+    marginTop: 8
   },
 
-  hintText: { 
-    color: "#fff", 
-    opacity: 0.7, 
-    marginTop: 6, 
-    fontSize: 12 
+  hintText: {
+    color: "#fff",
+    opacity: 0.7,
+    marginTop: 6,
+    fontSize: 12
   },
 
-  //Map and loading state
   mapWrap: { flex: 1, overflow: "hidden" },
 
-  loading: { 
-    flex: 1, 
-    justifyContent: "center", 
-    alignItems: "center" 
+  loading: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center"
   },
 
   loadingText: { marginTop: 8, color: "#fff" },
 
-  //Shop detail module (Bottom Information card) 
   modalBackdrop: {
     flex: 1,
-    justifyContent: "flex-end", 
-    backgroundColor: "rgba(0,0,0,0.4)"  
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(0,0,0,0.4)"
   },
 
   modalCard: {
-    backgroundColor: "#121C0C", 
+    backgroundColor: "#121C0C",
     padding: 16,
     borderTopLeftRadius: 18,
     borderTopRightRadius: 18
   },
 
-  modalTitle: { 
-    color: "#fff", 
-    fontSize: 18, 
-    fontWeight: "800" 
+  modalTitle: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "800"
   },
 
-  modalSub: { 
-    color: "#fff", 
-    opacity: 0.85, 
-    marginTop: 6 
+  modalSub: {
+    color: "#fff",
+    opacity: 0.85,
+    marginTop: 6
   },
 
-  //Modal buttons 
-  closeBtn: {
+  profileBtn: {
     marginTop: 14,
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: "#4CAF50",
+    alignItems: "center"
+  },
+
+  profileBtnText: {
+    color: "#fff",
+    fontWeight: "800",
+    fontSize: 15
+  },
+
+  unregisteredText: {
+    color: "#aaa",
+    fontSize: 12,
+    marginTop: 10,
+    fontStyle: "italic"
+  },
+
+  closeBtn: {
+    marginTop: 10,
     paddingVertical: 10,
     borderRadius: 12,
     backgroundColor: "#CE6674",
@@ -409,12 +468,11 @@ const styles = StyleSheet.create({
 
   closeBtnText: { color: "#fff", fontWeight: "800" },
 
-  //User Location Marker 
   userMarker: {
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: "rgba(59,130,246,0.2)", 
+    backgroundColor: "rgba(59,130,246,0.2)",
     justifyContent: "center",
     alignItems: "center",
   },
@@ -423,6 +481,6 @@ const styles = StyleSheet.create({
     width: 17,
     height: 17,
     borderRadius: 10,
-    backgroundColor: "#3B82F6" 
+    backgroundColor: "#3B82F6"
   },
 });

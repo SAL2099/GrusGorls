@@ -28,6 +28,11 @@ export default function ProfileScreen() {
   const [editing, setEditing] = useState(false);
   const [uploads, setUploads] = useState<any[]>([]);
   const [shopUploads, setShopUploads] = useState<any[]>([]);
+  const [announcements, setAnnouncements] = useState<any[]>([]);
+  const [announcementTitle, setAnnouncementTitle] = useState("");
+  const [announcementMessage, setAnnouncementMessage] = useState("");
+  const [postingAnnouncement, setPostingAnnouncement] = useState(false);
+
 
   // Form state for profile fields
   const [displayName, setDisplayName] = useState("");
@@ -45,13 +50,13 @@ export default function ProfileScreen() {
   const [pastReservations, setPastReservations] = useState<any[]>([]);
 
   // State for styled alert
-    const [alertVisible, setAlertVisible] = useState(false);
-    const [alertContent, setAlertContent] = useState({ title: "", message: "" });
+  const [alertVisible, setAlertVisible] = useState(false);
+  const [alertContent, setAlertContent] = useState({ title: "", message: "" });
 
-    const triggerAlert = (title: string, message: string) => {
-        setAlertContent({ title, message });
-        setAlertVisible(true);
-    };
+  const triggerAlert = (title: string, message: string) => {
+    setAlertContent({ title, message });
+    setAlertVisible(true);
+  };
 
   // Function to load the user's profile data from the database
   async function loadProfile() {
@@ -127,6 +132,26 @@ export default function ProfileScreen() {
     if (!resError) {
       setReservations(resData ?? []);
     }
+
+    // Fetch announcements for this store
+    if (data.role === "store") {
+      const { data: announcementData, error: announcementError } =
+        await supabase
+          .from("announcements")
+          .select("*")
+          .eq("store_id", data.id)
+          .order("created_at", { ascending: false });
+
+      if (announcementError) {
+        console.error("Announcement error:", announcementError);
+        setAnnouncements([]);
+      } else {
+        setAnnouncements(announcementData ?? []);
+      }
+    } else {
+      setAnnouncements([]);
+    }
+
 
     // Fetch Past Reservations (where collected_at is NOT null)
     const { data: pastData, error: pastError } = await supabase
@@ -234,6 +259,82 @@ export default function ProfileScreen() {
     );
   }
 
+  async function postAnnouncement() {
+    if (!profile?.id || profile.role !== "store") {
+      return;
+    }
+
+    if (!announcementTitle.trim()) {
+      triggerAlert("Missing title", "Please enter an announcement title.");
+      return;
+    }
+
+    if (!announcementMessage.trim()) {
+      triggerAlert("Missing message", "Please enter an announcement message.");
+      return;
+    }
+
+    try {
+      setPostingAnnouncement(true);
+
+      const { error } = await supabase
+        .from("announcements")
+        .insert({
+          store_id: profile.id,
+          title: announcementTitle.trim(),
+          message: announcementMessage.trim(),
+        });
+
+      if (error) {
+        console.error("Announcement insert error:", error);
+        triggerAlert("Error", error.message);
+        return;
+      }
+
+      setAnnouncementTitle("");
+      setAnnouncementMessage("");
+
+      await loadProfile();
+
+      triggerAlert("Posted", "Your announcement has been posted.");
+    } finally {
+      setPostingAnnouncement(false);
+    }
+  }
+
+  async function deleteAnnouncement(id: string) {
+    Alert.alert(
+      "Delete Announcement",
+      "Are you sure you want to delete this announcement?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            const { error } = await supabase
+              .from("announcements")
+              .delete()
+              .eq("id", id)
+              .eq("store_id", profile.id);
+
+            if (error) {
+              triggerAlert("Error", error.message);
+              return;
+            }
+
+            await loadProfile();
+          },
+        },
+      ]
+    );
+  }
+
+
+
   // Load the profile data when the component mounts
   useEffect(() => {
     if (isFocused) {
@@ -289,7 +390,7 @@ export default function ProfileScreen() {
                 {isStore ? (
                   <>
                     <Text style={styles.sub}>Account type: {isStore ? "Store" : "User"}</Text>
-                    <Text style={styles.sub}>Store name: {profile.store_name ?? "—"}</Text>
+                    <Text style={styles.name}>{profile.store_name ?? "—"}</Text>
                     <Text style={styles.sub}>Opening times: {profile.opening_times ?? "—"}</Text>
                     <Text style={styles.sub}>Address: {profile.address ?? "—"}</Text>
                   </>
@@ -463,6 +564,114 @@ export default function ProfileScreen() {
               </>
             )}
           </View>
+
+          {/* STORE ANNOUNCEMENTS */}
+          {isStore && !editing && (
+            <View style={styles.card}>
+              <View style={styles.announcementHeader}>
+                <View>
+                  <Text style={styles.sectionTitle}>
+                    Announcements
+                  </Text>
+
+                  <Text style={styles.sub}>
+                    Updates for your customers
+                  </Text>
+                </View>
+
+                <View style={styles.announcementIcon}>
+                  <Ionicons
+                    name="megaphone-outline"
+                    size={20}
+                    color="#fff"
+                  />
+                </View>
+              </View>
+
+              {/* Create announcement */}
+              <View style={styles.announcementForm}>
+                <TextInput
+                  value={announcementTitle}
+                  onChangeText={setAnnouncementTitle}
+                  placeholder="Announcement title"
+                  placeholderTextColor="#A7A7A7"
+                  style={styles.input}
+                />
+
+                <TextInput
+                  value={announcementMessage}
+                  onChangeText={setAnnouncementMessage}
+                  placeholder="Write your announcement..."
+                  placeholderTextColor="#A7A7A7"
+                  style={[
+                    styles.input,
+                    {
+                      height: 90,
+                      textAlignVertical: "top",
+                    },
+                  ]}
+                  multiline
+                />
+
+                <Pressable
+                  style={styles.button}
+                  onPress={postAnnouncement}
+                  disabled={postingAnnouncement}
+                >
+                  {postingAnnouncement ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <Text style={styles.buttonText}>
+                      Post Announcement
+                    </Text>
+                  )}
+                </Pressable>
+              </View>
+
+              {/* Existing announcements */}
+              {announcements.length === 0 ? (
+                <Text style={styles.sub}>
+                  You haven't posted any announcements yet.
+                </Text>
+              ) : (
+                announcements.map((announcement) => (
+                  <View
+                    key={announcement.id}
+                    style={styles.announcementCard}
+                  >
+                    <View style={styles.announcementTopRow}>
+                      <Text style={styles.announcementTitle}>
+                        {announcement.title}
+                      </Text>
+
+                      <Pressable
+                        onPress={() =>
+                          deleteAnnouncement(announcement.id)
+                        }
+                      >
+                        <Ionicons
+                          name="trash-outline"
+                          size={18}
+                          color="#f30678"
+                        />
+                      </Pressable>
+                    </View>
+
+                    <Text style={styles.announcementMessage}>
+                      {announcement.message}
+                    </Text>
+
+                    <Text style={styles.announcementDate}>
+                      {new Date(
+                        announcement.created_at
+                      ).toLocaleDateString()}
+                    </Text>
+                  </View>
+                ))
+              )}
+            </View>
+          )}
+
 
           {/* Show the user's uploads */}
           {!editing && (
@@ -651,7 +860,7 @@ export default function ProfileScreen() {
         </View>
       </KeyboardAwareScrollView>
       {/* The Styled Alert */}
-      <StyledAlert 
+      <StyledAlert
         visible={alertVisible}
         title={alertContent.title}
         message={alertContent.message}
@@ -888,5 +1097,62 @@ const styles = StyleSheet.create({
     fontSize: 8,
     fontWeight: '900',
   },
+
+  announcementHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+
+  announcementIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: "#CE6674",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+
+  announcementForm: {
+    marginTop: 8,
+    marginBottom: 14,
+  },
+
+  announcementCard: {
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderRadius: 12,
+    padding: 12,
+    marginTop: 10,
+  },
+
+  announcementTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+
+  announcementTitle: {
+    flex: 1,
+    color: "#fff",
+    fontSize: 15,
+    fontWeight: "900",
+    marginRight: 10,
+  },
+
+  announcementMessage: {
+    color: "#fff",
+    opacity: 0.85,
+    fontSize: 14,
+    lineHeight: 20,
+    marginTop: 8,
+  },
+
+  announcementDate: {
+    color: "#fff",
+    opacity: 0.45,
+    fontSize: 11,
+    marginTop: 8,
+  },
+
 });
 
