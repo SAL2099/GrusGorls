@@ -367,6 +367,8 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 100,
     backgroundColor: "#192710",
+    outlineColor: "rgba(197, 103, 103, 0.4)",
+    outlineWidth: 1,
   },
 
   image: {
@@ -431,6 +433,8 @@ const styles = StyleSheet.create({
     marginTop: 10,
     marginBottom: 16,
     elevation: 2,
+    outlineColor: "rgba(197, 103, 103, 0.4)",
+    outlineWidth: 1,
   },
 
   //Back button styling

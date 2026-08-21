@@ -215,7 +215,9 @@ const styles = StyleSheet.create({
         backgroundColor: "#eef2e4",
         borderRadius: 16,
         padding: 20,
-        margin: 5
+        margin: 15,
+        outlineColor: "rgba(197, 103, 103, 0.4)",
+        outlineWidth: 2,
     },
 
     title: {

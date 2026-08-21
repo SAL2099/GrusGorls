@@ -908,6 +908,8 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 14,
     paddingTop: 10,
+    outlineColor: "rgba(197, 103, 103, 0.4)",
+    outlineWidth: 1,
   },
 
   name: {

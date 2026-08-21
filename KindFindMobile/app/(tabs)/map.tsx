@@ -356,7 +356,7 @@ export default function MapScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1, },
 
   controls: {
     paddingHorizontal: 14,
@@ -422,7 +422,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#121C0C",
     padding: 16,
     borderTopLeftRadius: 18,
-    borderTopRightRadius: 18
+    borderTopRightRadius: 18,
   },
 
   modalTitle: {

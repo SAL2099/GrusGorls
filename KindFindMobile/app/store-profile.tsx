@@ -246,8 +246,7 @@ export default function StoreProfileScreen() {
                                     </Text>
 
                                     <Text style={styles.sub}>
-                                        Latest updates from this
-                                        store
+                                        Latest updates from this store
                                     </Text>
                                 </View>
 
@@ -451,6 +450,8 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         padding: 16,
         marginBottom: 14,
+         outlineColor: "rgba(197, 103, 103, 0.4)",
+        outlineWidth: 1,
 
         shadowColor: "#000",
         shadowOffset: {
@@ -521,6 +522,8 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         padding: 16,
         marginBottom: 14,
+        outlineColor: "rgba(197, 103, 103, 0.4)",
+        outlineWidth: 1,
 
         shadowColor: "#000",
         shadowOffset: {
@@ -597,6 +600,8 @@ const styles = StyleSheet.create({
         borderRadius: 16,
         padding: 16,
         marginBottom: 20,
+        outlineColor: "rgba(197, 103, 103, 0.4)",
+        outlineWidth: 1,
 
         shadowColor: "#000",
         shadowOffset: {
