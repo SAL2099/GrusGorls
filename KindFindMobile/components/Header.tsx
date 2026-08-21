@@ -21,6 +21,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center', 
     paddingTop: 20,
     paddingHorizontal: 15,
+    borderBottomWidth: 2,
+    borderBottomColor: 'rgba(206, 102, 116, 0.4)'
+
   },
 
   title: {

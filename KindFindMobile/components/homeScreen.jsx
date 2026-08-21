@@ -346,6 +346,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     marginBottom: 10,
     elevation: 2,
+    marginTop: 10,
   },
 
   searchIcon: {

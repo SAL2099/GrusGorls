@@ -1146,7 +1146,7 @@ const styles = StyleSheet.create({
     opacity: 0.85,
     fontSize: 14,
     lineHeight: 20,
-    marginTop: 8,
+    marginTop: 18,
   },
 
   announcementDate: {
