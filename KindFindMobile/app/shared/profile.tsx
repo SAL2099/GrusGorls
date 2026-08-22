@@ -714,7 +714,7 @@ export default function ProfileScreen() {
                   onChangeText={setAnnouncementTitle}
                   placeholder="Announcement title"
                   placeholderTextColor="#A7A7A7"
-                  style={[styles.input, { marginBottom: 7 }]}
+                  style={[styles.input, { marginBottom: 10 }]}
                 />
 
                 <TextInput
@@ -913,14 +913,14 @@ export default function ProfileScreen() {
                           style={styles.uploadImage}
                         />
 
-                        {/* If it's ready for pickup, show the TIMER (Green). Otherwise show the ID (Red) */}
+                        {/* If it's ready for pickup, show the TIMER (Green). Otherwise the store hasn't confirmed yet — don't reveal the number */}
                         {item.ready_for_pickup_at ? (
                           <View style={[styles.reservedBadge, { backgroundColor: '#4CAF50' }]}>
                             <Text style={styles.reservedBadgeText}>{timeLeft}</Text>
                           </View>
                         ) : (
                           <View style={styles.reservedBadge}>
-                            <Text style={styles.reservedBadgeText}>#{item.reservation_number}</Text>
+                            <Text style={styles.reservedBadgeText}>Pending</Text>
                           </View>
                         )}
                       </Pressable>

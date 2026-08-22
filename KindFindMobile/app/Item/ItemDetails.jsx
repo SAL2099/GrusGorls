@@ -120,7 +120,7 @@ export default function ItemDetails() {
 
     triggerAlert(
       "Reserved!",
-      `Your reservation number is ${reservationNumber}.`,
+      "Your item has been reserved. You'll see your reservation number here once the store confirms it's ready for pickup.",
       "GO_TABS"
     );
   };
