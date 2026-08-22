@@ -5,6 +5,8 @@ import { View, Text, Image, FlatList, ActivityIndicator, Dimensions, TextInput, 
 import { supabase } from "../lib/supabase";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import * as Location from "expo-location";
+import { fetchOsmShops } from "../lib/osmService";
 import ItemCard from './ItemCard';
 import AdvertCard from "./Advertising";
 
@@ -31,13 +33,78 @@ export default function HomeScreen() {
   const [searchedShops, setSearchedShops] = useState([]);
   const [adverts, setAdverts] = useState([]);
 
+  // State for "posts near me" filtering — nearbyStoreIds is null until we know the
+  // user's location (or if location isn't available); once loaded it holds the
+  // OSM shop ids (same ids saved as photos.store_id at upload time) within range.
+  const [nearbyStoreIds, setNearbyStoreIds] = useState(null);
+  const [locationDenied, setLocationDenied] = useState(false);
+  const [locatingShops, setLocatingShops] = useState(false);
+  const [showNearbyOnly, setShowNearbyOnly] = useState(false);
+  const NEARBY_RADIUS_METERS = 8000; // ~5 miles
+
   // navigation for pressable items
   const router = useRouter();
 
-  // Load initial items & adverts
+  // Work out which charity/second-hand shops are near the browsing user — only runs
+  // once, the first time the "near me" toggle is switched on, since it's a bit slow.
+  // Reuses the same OSM lookup as Upload/Map, so the ids line up with photos.store_id.
+  useEffect(() => {
+    if (!showNearbyOnly || nearbyStoreIds !== null || locatingShops) return;
+
+    (async () => {
+      try {
+        setLocatingShops(true);
+
+        const { status } = await Location.requestForegroundPermissionsAsync();
+        if (status !== "granted") {
+          setLocationDenied(true);
+          setNearbyStoreIds(null); // fail open — no location, so don't filter
+          return;
+        }
+
+        const loc = await Location.getCurrentPositionAsync({});
+        const results = await fetchOsmShops(
+          loc.coords.latitude,
+          loc.coords.longitude,
+          NEARBY_RADIUS_METERS
+        );
+
+        setNearbyStoreIds(results.map((s) => s.id));
+      } catch (e) {
+        console.log("Failed to determine nearby shops:", e);
+        setNearbyStoreIds(null); // fail open — show everything if we couldn't figure out the area
+      } finally {
+        setLocatingShops(false);
+      }
+    })();
+  }, [showNearbyOnly]);
+
+  // Applies the "near me" filter to a photos query. Items with no store_id (dropped
+  // off to "Other", not tied to a registered shop) always pass through since we have
+  // no location to check them against.
+  function applyAreaFilter(query) {
+    if (!showNearbyOnly) return query;
+    if (nearbyStoreIds === null) return query; // location unknown/denied — fail open
+
+    if (nearbyStoreIds.length === 0) {
+      // No charity/second-hand shops found nearby — only show unassigned drop-offs
+      return query.is("store_id", null);
+    }
+
+    const idList = nearbyStoreIds.map((id) => `"${id}"`).join(",");
+    return query.or(`store_id.is.null,store_id.in.(${idList})`);
+  }
+
+  // Load initial items & adverts — only waits on the area lookup when "near me" is on,
+  // so the default (show everything) feed loads immediately without waiting on location.
+  useEffect(() => {
+    if (isFocused && !(showNearbyOnly && locatingShops)) {
+      loadInitial();
+    }
+  }, [isFocused, locatingShops, nearbyStoreIds, showNearbyOnly]);
+
   useEffect(() => {
     if (isFocused) {
-      loadInitial();
       loadAdverts();
     }
   }, [isFocused]);
@@ -130,11 +197,15 @@ export default function HomeScreen() {
     setLoading(true);
     await cleanupOldUnregisteredItems();
 
-    const { data, error } = await supabase
+    let query = supabase
       .from("photos")
       .select("*")
       .eq("reserved", false)
-      .is("collected_at", null)
+      .is("collected_at", null);
+
+    query = applyAreaFilter(query);
+
+    const { data, error } = await query
       .order("created_at", { ascending: false })
       .range(0, PAGE_SIZE - 1);
 
@@ -155,11 +226,15 @@ export default function HomeScreen() {
     const from = page * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
 
-    const { data, error } = await supabase
+    let query = supabase
       .from("photos")
       .select("*")
       .eq("reserved", false)
-      .is("collected_at", null)
+      .is("collected_at", null);
+
+    query = applyAreaFilter(query);
+
+    const { data, error } = await query
       .order("created_at", { ascending: false })
       .range(from, to);
 
@@ -185,11 +260,15 @@ export default function HomeScreen() {
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
 
-    const { data, error } = await supabase
+    let query = supabase
       .from("photos")
       .select("*")
       .eq("reserved", false)
-      .is("collected_at", null)
+      .is("collected_at", null);
+
+    query = applyAreaFilter(query);
+
+    const { data, error } = await query
       .order("created_at", { ascending: false })
       .range(0, PAGE_SIZE - 1);
 
@@ -200,7 +279,7 @@ export default function HomeScreen() {
     }
 
     setRefreshing(false);
-  }, []);
+  }, [nearbyStoreIds, showNearbyOnly]);
 
   // Filter items locally
   const filteredItems = items.filter((item) => {
@@ -252,6 +331,36 @@ export default function HomeScreen() {
           value={searchQuery}
           onChangeText={setSearchQuery}
         />
+      </View>
+
+      {/* "Near me" area filter toggle */}
+      <View style={styles.areaRow}>
+        {(() => {
+          const isLoadingState = showNearbyOnly && locatingShops;
+          return (
+            <Pressable
+              style={[styles.areaPill, !isLoadingState && styles.areaPillActive]}
+              onPress={() => setShowNearbyOnly((prev) => !prev)}
+            >
+              <Ionicons
+                name="location-outline"
+                size={14}
+                color={isLoadingState ? "#CE6674" : "#fff"}
+              />
+              <Text style={[styles.areaPillText, !isLoadingState && styles.areaPillTextActive]}>
+                {showNearbyOnly
+                  ? locatingShops
+                    ? "Finding stores near you…"
+                    : "Stores near you"
+                  : "All stores"}
+              </Text>
+            </Pressable>
+          );
+        })()}
+
+        {showNearbyOnly && locationDenied && (
+          <Text style={styles.areaHint}>Enable location access to filter by area</Text>
+        )}
       </View>
 
       {/* Render matching shop profiles when searching */}
@@ -357,6 +466,47 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 12,
     color: "#000",
+  },
+
+  // "Near me" area filter toggle
+  areaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 12,
+  },
+
+  areaPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: "#fff",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: "#CE6674",
+  },
+
+  areaPillActive: {
+    backgroundColor: "#CE6674",
+  },
+
+  areaPillText: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#CE6674",
+  },
+
+  areaPillTextActive: {
+    color: "#fff",
+  },
+
+  areaHint: {
+    fontSize: 11,
+    color: "#fff",
+    opacity: 0.7,
   },
 
   // Charity Shop Profile Search Results
