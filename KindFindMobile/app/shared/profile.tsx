@@ -1,6 +1,6 @@
 //Imports
 import React, { useState, useEffect } from "react";
-import { View, Text, StyleSheet, ActivityIndicator, Pressable, TextInput, Alert, Image, FlatList, Dimensions } from "react-native";
+import { View, Text, StyleSheet, ActivityIndicator, Pressable, TextInput, Alert, Image, FlatList, Dimensions, Modal, ScrollView } from "react-native";
 import Screen from "../../components/Screen";
 import { supabase } from "../../lib/supabase";
 import { useRouter } from "expo-router";
@@ -52,6 +52,40 @@ export default function ProfileScreen() {
   // State for styled alert
   const [alertVisible, setAlertVisible] = useState(false);
   const [alertContent, setAlertContent] = useState({ title: "", message: "" });
+
+  // State for viewing a shop gallery item's details before deciding to edit
+  const [viewingItem, setViewingItem] = useState<any>(null);
+
+  // State for editing a shop gallery item (Store editing their own listing's price/size/tags)
+  const [editingItem, setEditingItem] = useState<any>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editPrice, setEditPrice] = useState("");
+  const [editSize, setEditSize] = useState("");
+  const [editTags, setEditTags] = useState<string[]>([]); // same tag options as Upload screen
+  const [savingItem, setSavingItem] = useState(false);
+
+  // Same tag categories/options offered on the Upload screen, kept in sync here
+  // so a store can only ever set tags from this fixed list, same 5-tag cap.
+  const tagCategories = {
+    Colours: ["Black", "White", "Red", "Blue", "Green", "Pink", "Brown", "Grey", "Yellow", "Multicoloured"],
+    Styles: ["Vintage", "Y2K", "Casual", "Formal", "Sporty", "Oversized"],
+    Types: ["Top", "Jumper", "Cardigan", "Dress", "One Piece", "Jeans", "Skirt", "Jacket", "Shoes", "Accessories", "Household"],
+    Condition: ["New", "Like New", "Good", "Worn"],
+  };
+
+  // Toggles a tag on/off in the edit modal, same 5-tag limit as Upload
+  function toggleEditTag(tag: string) {
+    setEditTags((prev) => {
+      if (prev.includes(tag)) {
+        return prev.filter((t) => t !== tag);
+      }
+      if (prev.length >= 5) {
+        triggerAlert("Tag limit", "You can select up to 5 tags.");
+        return prev;
+      }
+      return [...prev, tag];
+    });
+  }
 
   const triggerAlert = (title: string, message: string) => {
     setAlertContent({ title, message });
@@ -257,6 +291,91 @@ export default function ProfileScreen() {
         },
       ]
     );
+  }
+
+  // Opens the read-only view modal for a shop gallery item
+  function openViewItem(item: any) {
+    setViewingItem(item);
+  }
+
+  // Closes the view modal
+  function closeViewItem() {
+    setViewingItem(null);
+  }
+
+  // Switches from viewing an item to editing it (closes the view modal, opens the edit modal)
+  function startEditingFromView() {
+    if (!viewingItem) return;
+    const item = viewingItem;
+    closeViewItem();
+    openEditItem(item);
+  }
+
+  // Opens the edit modal and preloads the form fields with the item's current values
+  function openEditItem(item: any) {
+    setEditingItem(item);
+    setEditTitle(item.title ?? "");
+    setEditPrice(item.price != null ? item.price.toString() : "");
+    setEditSize(item.size != null ? item.size.toString() : "");
+    // tags is stored as an array (same as Upload screen's selectedTags) — normalise just in case
+    setEditTags(Array.isArray(item.tags) ? item.tags : item.tags ? [item.tags] : []);
+  }
+
+  // Closes the edit modal without saving
+  function closeEditItem() {
+    setEditingItem(null);
+    setEditTitle("");
+    setEditPrice("");
+    setEditSize("");
+    setEditTags([]);
+  }
+
+  // Saves the edited shop item (price, size, title, tags) back to the photos table.
+  // Relies on a Supabase RLS policy that allows a store to update photos where
+  // photos.store_id matches their own profiles.store_id.
+  async function saveShopItem() {
+    if (!editingItem?.id) return;
+
+    if (!editTitle.trim()) {
+      triggerAlert("Missing title", "Please enter a title.");
+      return;
+    }
+
+    if (editTags.length < 1) {
+      triggerAlert("Missing tags", "Please select at least 1 tag.");
+      return;
+    }
+
+    const parsedPrice = editPrice.trim() ? parseFloat(editPrice) : null;
+    if (editPrice.trim() && Number.isNaN(parsedPrice)) {
+      triggerAlert("Invalid price", "Please enter a valid number for price.");
+      return;
+    }
+
+    try {
+      setSavingItem(true);
+
+      const { error } = await supabase
+        .from("photos")
+        .update({
+          title: editTitle.trim(),
+          price: parsedPrice,
+          size: editSize.trim(),
+          tags: editTags,
+        })
+        .eq("id", editingItem.id);
+
+      if (error) {
+        triggerAlert("Update failed", error.message);
+        return;
+      }
+
+      closeEditItem();
+      await loadProfile();
+      triggerAlert("Saved", "Item updated successfully.");
+    } finally {
+      setSavingItem(false);
+    }
   }
 
   async function postAnnouncement() {
@@ -595,7 +714,7 @@ export default function ProfileScreen() {
                   onChangeText={setAnnouncementTitle}
                   placeholder="Announcement title"
                   placeholderTextColor="#A7A7A7"
-                  style={styles.input}
+                  style={[styles.input, { marginBottom: 7 }]}
                 />
 
                 <TextInput
@@ -737,26 +856,18 @@ export default function ProfileScreen() {
                   renderItem={({ item }) => (
                     <Pressable
                       style={styles.imageWrapper}
-                      onPress={() => {
-                        router.push({
-                          pathname: "/listing/[id]",
-                          params: {
-                            id: item.id,
-                            title: item.title,
-                            image_url: item.image_url,
-                            tags: item.tags,
-                            price: item.price,
-                            size: item.size,
-                            location: item.location
-                          }
-                        });
-                      }}
+                      // Tap opens a read-only details view; Edit lives inside that view
+                      onPress={() => openViewItem(item)}
                       onLongPress={() => deleteShopItem(item.id)}
                     >
                       <Image
                         source={{ uri: item.image_url }}
                         style={styles.uploadImage}
                       />
+                      {/* Small pencil icon signals the item is tappable to view/edit */}
+                      <View style={styles.editIconBadge}>
+                        <Ionicons name="pencil" size={12} color="#fff" />
+                      </View>
                       <View style={styles.deleteBadge}>
                         <Text style={styles.deleteBadgeText}>Hold to delete</Text>
                       </View>
@@ -859,6 +970,141 @@ export default function ProfileScreen() {
           )}
         </View>
       </KeyboardAwareScrollView>
+
+      {/* View Shop Item Modal — read-only details, with an Edit button to fix anything wrong */}
+      <Modal visible={!!viewingItem} transparent animationType="fade" onRequestClose={closeViewItem}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.modalScrollContent}
+            >
+              <Text style={styles.sectionTitle}>Item details</Text>
+
+              {viewingItem && (
+                <>
+                  <Image
+                    source={{ uri: viewingItem.image_url }}
+                    style={styles.viewItemImage}
+                  />
+
+                  <Text style={styles.label}>Title</Text>
+                  <Text style={styles.viewValue}>{viewingItem.title || "—"}</Text>
+
+                  <Text style={styles.label}>Price</Text>
+                  <Text style={styles.viewValue}>
+                    {viewingItem.price != null ? `£${Number(viewingItem.price).toFixed(2)}` : "—"}
+                  </Text>
+
+                  <Text style={styles.label}>Size</Text>
+                  <Text style={styles.viewValue}>{viewingItem.size || "—"}</Text>
+
+                  <Text style={styles.label}>Tags</Text>
+                  <View style={styles.tagsContainer}>
+                    {(Array.isArray(viewingItem.tags) ? viewingItem.tags : viewingItem.tags ? [viewingItem.tags] : []).length === 0 ? (
+                      <Text style={styles.viewValue}>—</Text>
+                    ) : (
+                      (Array.isArray(viewingItem.tags) ? viewingItem.tags : [viewingItem.tags]).map((tag: string) => (
+                        <View key={tag} style={[styles.tagChip, styles.tagChipSelected]}>
+                          <Text style={[styles.tagChipText, styles.tagChipTextSelected]}>{tag}</Text>
+                        </View>
+                      ))
+                    )}
+                  </View>
+                </>
+              )}
+
+              <Pressable style={styles.button} onPress={startEditingFromView}>
+                <Text style={styles.buttonText}>Details wrong? Edit</Text>
+              </Pressable>
+
+              <Pressable style={[styles.button, styles.secondaryBtn]} onPress={closeViewItem}>
+                <Text style={styles.buttonText}>Close</Text>
+              </Pressable>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Edit Shop Item Modal — lets a store update price/size/title/tags for a gallery item */}
+      <Modal visible={!!editingItem} transparent animationType="fade" onRequestClose={closeEditItem}>
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={styles.modalScrollContent}
+            >
+              <Text style={styles.sectionTitle}>Edit item</Text>
+
+              <Text style={styles.label}>Title</Text>
+              <TextInput
+                value={editTitle}
+                onChangeText={setEditTitle}
+                style={styles.input}
+                placeholder="Title"
+                placeholderTextColor="#A7A7A7"
+              />
+
+              <Text style={styles.label}>Price</Text>
+              <TextInput
+                value={editPrice}
+                onChangeText={setEditPrice}
+                style={styles.input}
+                placeholder="0.00"
+                placeholderTextColor="#A7A7A7"
+                keyboardType="decimal-pad"
+              />
+
+              <Text style={styles.label}>Size</Text>
+              <TextInput
+                value={editSize}
+                onChangeText={setEditSize}
+                style={styles.input}
+                placeholder="Size"
+                placeholderTextColor="#A7A7A7"
+              />
+
+              <Text style={styles.label}>Tags ({editTags.length}/5 selected)</Text>
+              <View style={styles.tagsPanel}>
+                {Object.entries(tagCategories).map(([category, tags]) => (
+                  <View key={category} style={styles.categorySection}>
+                    <Text style={styles.categoryTitle}>{category}</Text>
+                    <View style={styles.tagsContainer}>
+                      {tags.map((tag) => {
+                        const isSelected = editTags.includes(tag);
+                        return (
+                          <Pressable
+                            key={tag}
+                            style={[styles.tagChip, isSelected && styles.tagChipSelected]}
+                            onPress={() => toggleEditTag(tag)}
+                          >
+                            <Text style={[styles.tagChipText, isSelected && styles.tagChipTextSelected]}>
+                              {tag}
+                            </Text>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                  </View>
+                ))}
+              </View>
+
+              <Pressable style={styles.button} onPress={saveShopItem} disabled={savingItem}>
+                {savingItem ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.buttonText}>Save</Text>
+                )}
+              </Pressable>
+
+              <Pressable style={[styles.button, styles.secondaryBtn]} onPress={closeEditItem}>
+                <Text style={styles.buttonText}>Cancel</Text>
+              </Pressable>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
       {/* The Styled Alert */}
       <StyledAlert
         visible={alertVisible}
@@ -1100,6 +1346,19 @@ const styles = StyleSheet.create({
     fontWeight: '900',
   },
 
+  //Edit icon badge (small pencil in the corner of Store Gallery items)
+  editIconBadge: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: 'rgba(206, 102, 116, 0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
   announcementHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -1156,5 +1415,79 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
 
-});
+  // Tag chip styles (matches Upload screen's tag picker)
+  tagsPanel: {
+    backgroundColor: "rgba(255,255,255,0.05)",
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 10,
+  },
+  categorySection: {
+    marginBottom: 14,
+  },
+  categoryTitle: {
+    color: "#FFF",
+    fontWeight: "700",
+    marginBottom: 8,
+    fontSize: 15,
+  },
+  tagsContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 10,
+  },
+  tagChip: {
+    backgroundColor: "#121C0C",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.12)",
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  tagChipSelected: {
+    backgroundColor: "#CE6674",
+    borderColor: "#CE6674",
+  },
+  tagChipText: {
+    color: "#FFF",
+    fontSize: 14,
+  },
+  tagChipTextSelected: {
+    fontWeight: "700",
+  },
 
+  // Edit item modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 24,
+  },
+  modalCard: {
+    width: "100%",
+    maxHeight: "85%",
+    backgroundColor: "#121C0C",
+    borderRadius: 16,
+    padding: 16,
+    outlineColor: "rgba(197, 103, 103, 0.4)",
+    outlineWidth: 1,
+  },
+  modalScrollContent: {
+    paddingBottom: 8,
+  },
+  viewItemImage: {
+    width: "100%",
+    height: 220,
+    borderRadius: 12,
+    marginBottom: 12,
+    backgroundColor: "rgba(255,255,255,0.08)",
+  },
+  viewValue: {
+    color: "#fff",
+    fontSize: 15,
+    marginBottom: 4,
+  },
+
+});
