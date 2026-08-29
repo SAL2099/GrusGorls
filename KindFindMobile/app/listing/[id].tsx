@@ -138,14 +138,16 @@ export default function ListingDetail() {
                     <Text style={styles.text}>{item.location}</Text>
                 </View>
 
-                {/* Show Pickup Timer on Detail Page */}
-                {currentUser?.id === item.reserved_by && item.ready_for_pickup_at && (
+                {/* Show Pickup Timer + reservation number once the store has confirmed it's ready */}
+                {currentUser?.id === item.reserved_by && item.ready_for_pickup_at && !item.collected_at &&(
                     <View style={[styles.reservationInfoCard, { backgroundColor: '#4CAF50', marginBottom: 0 }]}>
                         <Text style={styles.resLabel}>READY FOR PICKUP</Text>
                         <Text style={styles.resNumber}>{getRemainingTime(item.ready_for_pickup_at)}</Text>
-                        <Text style={{ color: '#fff', fontSize: 12, textAlign: 'center' }}>
+                        <Text style={{ color: '#fff', fontSize: 12, textAlign: 'center', marginBottom: 10 }}>
                             Please collect this item from {item.location} before the timer runs out.
                         </Text>
+                        <Text style={{ color: '#fff', fontSize: 12, opacity: 0.85 }}>Your Reservation Number</Text>
+                        <Text style={[styles.resNumber, { fontSize: 24, marginTop: 2, marginBottom: 0 }]}>{item.reservation_number}</Text>
                     </View>
                 )}
 
@@ -155,11 +157,13 @@ export default function ListingDetail() {
                     </Pressable>
                 )}
 
-                {/* Show reservation info if the user is the one who reserved it */}
-                {currentUser?.id === item.reserved_by && item.reserved && (
+                {/* Reserved but the store hasn't confirmed it's ready yet — don't reveal the number */}
+                {currentUser?.id === item.reserved_by && item.reserved && !item.ready_for_pickup_at && !item.collected_at && (
                     <View style={styles.reservationInfoCard}>
-                        <Text style={styles.resLabel}>Your Reservation Number:</Text>
-                        <Text style={styles.resNumber}>{item.reservation_number}</Text>
+                        <Text style={styles.resLabel}>Reservation Placed</Text>
+                        <Text style={{ color: '#fff', fontSize: 13, textAlign: 'center', marginTop: 6 }}>
+                            Waiting for the store to confirm it's ready for pickup. Your reservation number will appear here once confirmed.
+                        </Text>
                     </View>
                 )}
             </ScrollView>
@@ -215,7 +219,9 @@ const styles = StyleSheet.create({
         backgroundColor: "#eef2e4",
         borderRadius: 16,
         padding: 20,
-        margin: 5
+        margin: 15,
+        outlineColor: "rgba(197, 103, 103, 0.4)",
+        outlineWidth: 2,
     },
 
     title: {

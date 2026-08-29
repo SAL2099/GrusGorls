@@ -13,7 +13,7 @@ import TabIcon from '../../components/TabIcons';
 // TabLayout component defines the layout for the main tab navigation of the app
 export default function TabLayout() {
   return (
-    <View style={{ flex: 1, backgroundColor: '#192710' }}>
+    <View style={{ flex: 1, backgroundColor: '#192710'}}>
       <Header />
 
       <Tabs
@@ -24,9 +24,11 @@ export default function TabLayout() {
             height: 70,
             paddingBottom: 10,
             backgroundColor: '#121C0C',
-            borderTopWidth: 0,
             elevation: 0,
             shadowOpacity: 0,
+            borderTopWidth: 0,
+            borderTopColor: "transparent",
+
           },
           tabBarIconStyle: {
             marginTop: 15,

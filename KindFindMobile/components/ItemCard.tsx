@@ -94,6 +94,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: "#eef2e4",
     padding: 10,
+    outlineColor: "rgba(197, 103, 103, 0.4)",
+    outlineWidth: 1,
   },
   cardImage: {
     width: "100%",

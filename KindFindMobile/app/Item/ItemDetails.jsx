@@ -120,7 +120,7 @@ export default function ItemDetails() {
 
     triggerAlert(
       "Reserved!",
-      `Your reservation number is ${reservationNumber}.`,
+      "Your item has been reserved. You'll see your reservation number here once the store confirms it's ready for pickup.",
       "GO_TABS"
     );
   };
@@ -189,7 +189,7 @@ export default function ItemDetails() {
 
   // Cancel reservation (store only)
   const handleCancelReservation = async () => {
-    triggerAlert(
+    Alert.alert( 
       "Cancel Reservation",
       "Are you sure? The user will be notified and the item will return to the feed.",
       [
@@ -200,7 +200,7 @@ export default function ItemDetails() {
           onPress: async () => {
             if (!parsedItem) return;
 
-            //Set cancelled flag FIRST while reserved_by still matches the realtime filter
+            //Set cancelled flag first while reserved_by still matches the realtime filter
             const { error: flagError } = await supabase
               .from("photos")
               .update({ cancelled_by_store: true })
@@ -220,7 +220,7 @@ export default function ItemDetails() {
                 reserved_at: null,
                 reservation_number: null,
                 ready_for_pickup_at: null,
-                cancelled_by_store: false, // clean up the flag
+                cancelled_by_store: false, 
               })
               .eq("id", Number(parsedItem.id));
 
@@ -228,7 +228,6 @@ export default function ItemDetails() {
               triggerAlert("Error", "Could not clear reservation.");
               return;
             }
-
             triggerAlert("Cancelled", "Reservation has been cancelled.", "GO_STORE");
           },
         },
@@ -368,6 +367,8 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 100,
     backgroundColor: "#192710",
+    outlineColor: "rgba(197, 103, 103, 0.4)",
+    outlineWidth: 1,
   },
 
   image: {
@@ -432,13 +433,15 @@ const styles = StyleSheet.create({
     marginTop: 10,
     marginBottom: 16,
     elevation: 2,
+    outlineColor: "rgba(197, 103, 103, 0.4)",
+    outlineWidth: 1,
   },
 
   //Back button styling
   backBtn: {
     backgroundColor: "#CE6674",
     padding: 15,
-    marginHorizontal: 16,
+    marginLeft: 0,
     marginTop: 20,
     borderRadius: 12,
     alignItems: "center",

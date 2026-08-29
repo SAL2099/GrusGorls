@@ -689,6 +689,8 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     backgroundColor: "#121C0C",
     padding: 10,
+    outlineColor: "rgba(197, 103, 103, 0.4)",
+    outlineWidth: 1,
   },
 
   cardTitle: {
