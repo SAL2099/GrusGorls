@@ -3,9 +3,6 @@ import { View, Text, TextInput, Pressable, StyleSheet, Alert, ScrollView, Keyboa
 import { router } from "expo-router"; // Import router for navigation between screens
 import Screen from "../../components/Screen"; // Import custom Screen component for consistent styling and layout
 import { supabase } from "../../lib/supabase"; // Import supabase client for authentication and database interactions
-import * as Location from "expo-location"; // Import Expo location for getting the user's current location
-import { Dropdown } from "react-native-element-dropdown"; // Dropdown component for selecting nearby shops
-import { fetchOsmShops } from "../../lib/osmService"; // Function to fetch nearby charity shops
 import { validatePassword, getPasswordRequirements } from "../../lib/validation";
 import { Ionicons } from "@expo/vector-icons"; //Icon
 import StyledAlert from "../../components/StyledAlert";
@@ -18,13 +15,19 @@ export default function SignUpScreen() {
     const [password, setPassword] = useState("");
     const [displayName, setDisplayName] = useState("");
 
-    // store-only
-    const [storeName, setStoreName] = useState("");
-    const [openingTimes, setOpeningTimes] = useState("");
-    const [address, setAddress] = useState("");
-    const [shops, setShops] = useState<any[]>([]);
-    const [loadingShops, setLoadingShops] = useState(false);
-    const [selectedShop, setSelectedShop] = useState("");
+    // Store access code — stores need a code from our website, and that code is tied
+    // to one specific shop (store_id/store_name/etc come from the code itself, not a
+    // shop picker), so a code can only ever register the exact store it was issued for.
+    const [storeAccessCode, setStoreAccessCode] = useState("");
+    const [codeVerified, setCodeVerified] = useState(false);
+    const [verifyingCode, setVerifyingCode] = useState(false);
+    const [verifiedStore, setVerifiedStore] = useState<{
+        id: number;
+        store_id: string;
+        store_name: string;
+        opening_times: string | null;
+        address: string | null;
+    } | null>(null);
 
     const [loading, setLoading] = useState(false);
 
@@ -44,80 +47,58 @@ export default function SignUpScreen() {
         setAlertVisible(true);
     };
 
-
-    // Load nearby shops when the store role is selected
+    // Show a one-time popup explaining the access code requirement whenever
+    // someone switches to the Store tab without already having a verified code.
     useEffect(() => {
-        async function loadShops() {
-            if (role !== "store") return;
-
-            try {
-                setLoadingShops(true);
-
-                const { status } = await Location.requestForegroundPermissionsAsync();
-                if (status !== "granted") {
-                    triggerAlert("Location needed", "Please allow location access to find your store.");
-                    return;
-                }
-
-
-                const loc = await Location.getCurrentPositionAsync({});
-                const lat = loc.coords.latitude;
-                const lng = loc.coords.longitude;
-
-                const results = await fetchOsmShops(lat, lng, 5000);
-
-                // Get stores already registered
-                const { data: takenStores } = await supabase
-                    .from("profiles")
-                    .select("store_id")
-                    .not("store_id", "is", null);
-
-
-                // Convert taken stores to a list to check for duplicates
-                const takenIds = (takenStores ?? []).map((s) => String(s.store_id));
-
-                const availableShops = (results ?? []).filter(
-                    (shop: any) => !takenIds.includes(String(shop.id))
-                );
-
-                setShops(availableShops);
-
-            } catch (error) {
-                console.log("Failed to fetch nearby shops:", error);
-                triggerAlert("Error", "Could not load nearby shops.");
-            } finally {
-                setLoadingShops(false);
-            }
+        if (role === "store" && !codeVerified) {
+            triggerAlert(
+                "Store access code needed",
+                "To register as a store you'll need an access code from us, specific to your shop. Please visit our website to request one, then enter it below."
+            );
         }
-
-        loadShops();
     }, [role]);
 
-    // Function to handle dropdown selection for a store
-    function handleStoreSelection(item: any) {
-        if (item.value === "manual") {
-            triggerAlert(
-                "Store not listed",
-                "Please contact support to have your store added."
-            );
-            setSelectedShop("");
-            setStoreName("");
-            setAddress("");
-            setOpeningTimes("");
+    // Verifies the entered access code against Supabase. The code itself carries the
+    // store's identity (store_id/name/address/opening times), so once verified we
+    // already know exactly which shop this account belongs to — no shop picker needed.
+    async function verifyAccessCode() {
+        const cleanCode = storeAccessCode.trim().toUpperCase();
+
+        if (!cleanCode) {
+            triggerAlert("Code required", "Please enter the access code you received from our website.");
             return;
         }
 
-        setSelectedShop(item.value);
+        setVerifyingCode(true);
 
-        const chosenShop = shops.find((shop) => shop.id === item.value);
+        const { data, error } = await supabase
+            .from("invite_codes")
+            .select("id, used, store_id, store_name, opening_times, address")
+            .eq("code", cleanCode)
+            .maybeSingle();
 
-        if (chosenShop) {
-            setStoreName(chosenShop.name ?? "");
-            setAddress(chosenShop.address ?? "");
-            setOpeningTimes(chosenShop.opening_hours ?? "");
+        setVerifyingCode(false);
+
+        if (error || !data) {
+            triggerAlert("Invalid code", "That code wasn't recognised. Please check it or contact us via our website.");
+            return;
         }
+
+        if (data.used) {
+            triggerAlert("Code already used", "This code has already been used to register a store. Please contact us via our website for a new one.");
+            return;
+        }
+
+        setVerifiedStore(data);
+        setCodeVerified(true);
     }
 
+    // Lets someone re-enter a different code if they typed the wrong one
+    function changeCode() {
+        setCodeVerified(false);
+        setVerifiedStore(null);
+        setStoreAccessCode("");
+    }
 
     //Function for signing up a new user or store owner, creates an account with Supabase, and inserting the user's profile into the database
     async function signUp() {
@@ -132,19 +113,19 @@ export default function SignUpScreen() {
             return;
         }
 
-        if (role === "store" && !selectedShop) {
-            triggerAlert("Store missing", "Please select a store.");
+        if (role === "store" && (!codeVerified || !verifiedStore)) {
+            triggerAlert("Access code needed", "Please verify your store access code before signing up.");
             return;
         }
 
         setLoading(true);
 
         try {
-            if (role === "store") {
+            if (role === "store" && verifiedStore) {
                 const { data: existingStore } = await supabase
                     .from("profiles")
                     .select("id")
-                    .eq("store_id", String(selectedShop))
+                    .eq("store_id", verifiedStore.store_id)
                     .maybeSingle();
 
                 if (existingStore) {
@@ -168,14 +149,30 @@ export default function SignUpScreen() {
                 return;
             }
 
+            // Atomically claim the access code (only succeeds if it's still unused) before
+            // creating the profile, so two people can't redeem the same code in a race.
+            if (role === "store" && verifiedStore) {
+                const { data: claimed, error: claimError } = await supabase
+                    .from("invite_codes")
+                    .update({ used: true, used_by: userId, used_at: new Date().toISOString() })
+                    .eq("id", verifiedStore.id)
+                    .eq("used", false)
+                    .select("id");
+
+                if (claimError || !claimed || claimed.length === 0) {
+                    await supabase.auth.signOut();
+                    throw new Error("This code was just used by someone else. Please request a new one from our website.");
+                }
+            }
+
             const { error: profileError } = await supabase.from("profiles").insert([{
                 id: userId,
                 role,
                 display_name: displayName.trim(),
-                store_id: role === "store" ? String(selectedShop) : null,
-                store_name: role === "store" ? storeName.trim() : null,
-                opening_times: role === "store" ? openingTimes.trim() : null,
-                address: role === "store" ? address.trim() : null,
+                store_id: role === "store" && verifiedStore ? verifiedStore.store_id : null,
+                store_name: role === "store" && verifiedStore ? verifiedStore.store_name : null,
+                opening_times: role === "store" && verifiedStore ? verifiedStore.opening_times : null,
+                address: role === "store" && verifiedStore ? verifiedStore.address : null,
             }]);
 
             if (profileError) {
@@ -218,7 +215,6 @@ export default function SignUpScreen() {
                                 style={[styles.rolePill, role === "user" && styles.rolePillActive]}
                                 onPress={() => {
                                     setRole("user");
-                                    setSelectedShop("");
                                 }}
                             >
                                 <Text style={styles.roleText}>User</Text>
@@ -297,38 +293,60 @@ export default function SignUpScreen() {
 
                         />
 
-                        {/* Additional inputs for store owners, including a dropdown to select their store from nearby options */}
-                        {role === "store" && (
-                            <>
-                                {loadingShops ? (
-                                    <ActivityIndicator size="small" color="#fff" style={{ marginBottom: 10 }} />
-                                ) : (
-                                    <Dropdown
-                                        style={styles.dropdown}
-                                        placeholderStyle={styles.placeholderStyle}
-                                        selectedTextStyle={styles.selectedTextStyle}
-                                        inputSearchStyle={styles.inputSearchStyle}
-                                        data={[
-                                            ...shops.map((shop) => ({
-                                                label: shop.displayName ?? shop.name ?? "Unnamed shop",
-                                                value: shop.id,
-                                            })),
-                                            { label: "My store isn’t listed", value: "manual" }
-                                        ]}
-                                        search
-                                        maxHeight={300}
-                                        labelField="label"
-                                        valueField="value"
-                                        placeholder="Search or select your store"
-                                        searchPlaceholder="Search for your store..."
-                                        value={selectedShop}
-                                        onChange={handleStoreSelection}
-                                    />
-                                )}
-                            </>
+                        {/* Store signup flow: access code gate, tied to one specific shop */}
+                        {role === "store" && !codeVerified && (
+                            <View style={styles.codeCard}>
+                                <Text style={styles.codeCardTitle}>Store access code required</Text>
+                                <Text style={styles.codeCardText}>
+                                    Store accounts need a one-time code from our website, specific to your shop. Visit our site to request one, then enter it below.
+                                </Text>
+
+                                <TextInput
+                                    placeholder="Enter access code"
+                                    placeholderTextColor="#A7A7A7"
+                                    autoCapitalize="characters"
+                                    style={[styles.input, { marginTop: 10, marginBottom: 10 }]}
+                                    value={storeAccessCode}
+                                    onChangeText={setStoreAccessCode}
+                                    returnKeyType="done"
+                                    onSubmitEditing={verifyAccessCode}
+                                />
+
+                                <Pressable
+                                    style={[styles.button, { marginTop: 0, backgroundColor: "#CE6674" }]}
+                                    onPress={verifyAccessCode}
+                                    disabled={verifyingCode}
+                                >
+                                    <Text style={styles.buttonText}>
+                                        {verifyingCode ? "Checking..." : "Verify Code"}
+                                    </Text>
+                                </Pressable>
+                            </View>
                         )}
 
-                        <Pressable style={styles.button} onPress={signUp} disabled={loading}>
+                        {/* Once the code is verified, show which shop this account will be — read-only, it came from the code */}
+                        {role === "store" && codeVerified && verifiedStore && (
+                            <View style={[styles.codeCard, { backgroundColor: "rgba(76, 175, 80, 0.12)", borderColor: "rgba(76, 175, 80, 0.4)" }]}>
+                                <Text style={styles.codeCardTitle}>Registering as:</Text>
+                                <Text style={styles.verifiedStoreName}>{verifiedStore.store_name}</Text>
+                                {verifiedStore.address ? (
+                                    <Text style={styles.codeCardText}>{verifiedStore.address}</Text>
+                                ) : null}
+                                {verifiedStore.opening_times ? (
+                                    <Text style={styles.codeCardText}>{verifiedStore.opening_times}</Text>
+                                ) : null}
+
+                                <Pressable onPress={changeCode} style={{ marginTop: 10 }}>
+                                    <Text style={styles.link}>Not your shop? Enter a different code</Text>
+                                </Pressable>
+                            </View>
+                        )}
+
+                        <Pressable
+                            style={[styles.button, role === "store" && !codeVerified && styles.buttonDisabled]}
+                            onPress={signUp}
+                            disabled={loading || (role === "store" && !codeVerified)}
+                        >
                             <Text style={styles.buttonText}>{loading ? "Creating..." : "Sign up"}</Text>
                         </Pressable>
 
@@ -401,32 +419,35 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
 
-    dropdown: {
-        height: 50,
-        backgroundColor: "#121C0C",
+    // Store access code card
+    codeCard: {
+        backgroundColor: "rgba(206, 102, 116, 0.12)",
         borderRadius: 12,
-        paddingHorizontal: 12,
-        marginBottom: 10,
         borderWidth: 1,
-        borderColor: "rgba(255,255,255,0.12)",
+        borderColor: "rgba(206, 102, 116, 0.4)",
+        padding: 14,
+        marginBottom: 10,
     },
 
-    placeholderStyle: {
-        fontSize: 16,
-        color: "#A7A7A7",
-    },
-
-    selectedTextStyle: {
-        fontSize: 16,
+    codeCardTitle: {
         color: "#fff",
+        fontWeight: "900",
+        fontSize: 15,
+        marginBottom: 6,
     },
 
-    inputSearchStyle: {
-        height: 40,
-        fontSize: 16,
-        borderRadius: 8,
-        color: "#000",
-        backgroundColor: "#fff",
+    codeCardText: {
+        color: "#fff",
+        opacity: 0.85,
+        fontSize: 13,
+        lineHeight: 18,
+    },
+
+    verifiedStoreName: {
+        color: "#fff",
+        fontWeight: "900",
+        fontSize: 17,
+        marginBottom: 4,
     },
 
     button: {
@@ -435,6 +456,10 @@ const styles = StyleSheet.create({
         paddingVertical: 12,
         borderRadius: 12,
         alignItems: "center"
+    },
+
+    buttonDisabled: {
+        opacity: 0.5,
     },
 
     buttonText: { color: "#fff", fontWeight: "900" },
