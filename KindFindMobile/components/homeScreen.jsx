@@ -1,6 +1,6 @@
 //Imports
 import { useEffect, useState, useCallback } from "react";
-import { useIsFocused } from "@react-navigation/native";
+import { useFocusEffect } from "expo-router";
 import { View, Text, Image, FlatList, ActivityIndicator, Dimensions, TextInput, StyleSheet, Pressable } from "react-native"; 
 import { supabase } from "../lib/supabase";
 import { Ionicons } from "@expo/vector-icons";
@@ -13,7 +13,14 @@ import AdvertCard from "./Advertising";
 // HomeScreen component that displays a feed of items fetched from the Supabase database, with support for searching, pull-to-refresh, and infinite scrolling
 export default function HomeScreen() { 
   // State variables to manage the list of items, loading states, pagination, search query, adverts, and shop profiles
-  const isFocused = useIsFocused();
+  const [isFocused, setIsFocused] = useState(true);
+
+  useFocusEffect(
+    useCallback(() => {
+      setIsFocused(true);
+      return () => setIsFocused(false);
+    }, [])
+  );
   const [items, setItems] = useState([]); 
 
   const [loading, setLoading] = useState(true); 

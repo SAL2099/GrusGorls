@@ -1,10 +1,9 @@
 //Imports
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { View, Text, StyleSheet, ActivityIndicator, Pressable, TextInput, Alert, Image, FlatList, Dimensions, Modal, ScrollView } from "react-native";
 import Screen from "../../components/Screen";
 import { supabase } from "../../lib/supabase";
-import { useRouter } from "expo-router";
-import { useIsFocused } from "@react-navigation/native";
+import { useRouter, useFocusEffect } from "expo-router";
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { validatePassword, getPasswordRequirements } from "../../lib/validation";
 import { Ionicons } from "@expo/vector-icons"; //Icon
@@ -20,8 +19,6 @@ const imageSize = (screenWidth - horizontalPadding - gap * 2 - 28) / 3;
 // The ProfileScreen component displays the user's profile information and allows them to edit it or log out
 export default function ProfileScreen() {
   const router = useRouter();
-  const isFocused = useIsFocused();
-
   // State variables to manage loading state, profile data, edit mode, and form inputs
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
@@ -455,11 +452,11 @@ export default function ProfileScreen() {
 
 
   // Load the profile data when the component mounts
-  useEffect(() => {
-    if (isFocused) {
+  useFocusEffect(
+    useCallback(() => {
       loadProfile();
-    }
-  }, [isFocused]);
+    }, [])
+  );
 
   const [tick, setTick] = useState(0);
 
