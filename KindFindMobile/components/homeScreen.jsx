@@ -10,6 +10,7 @@ import { fetchOsmShops } from "../lib/osmService";
 import ItemCard from './ItemCard';
 import AdvertCard from "./Advertising";
 
+
 // HomeScreen component that displays a feed of items fetched from the Supabase database, with support for searching, pull-to-refresh, and infinite scrolling
 export default function HomeScreen() { 
   // State variables to manage the list of items, loading states, pagination, search query, adverts, and shop profiles
