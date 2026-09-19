@@ -11,6 +11,8 @@ import { Stack, useRouter, useSegments } from "expo-router";
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
 
+import { LogBox } from 'react-native';
+LogBox.ignoreLogs(['viewIsDescendantOf']);
 // expo-notifications' remote/scheduled notification APIs were removed from
 // Expo Go as of SDK 53 — and just *importing* the module throws in Expo Go,
 // not only calling its functions. So we can't use a static `import` here;
