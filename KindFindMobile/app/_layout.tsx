@@ -2,6 +2,7 @@ import "react-native-url-polyfill/auto";
 import "react-native-get-random-values";
 import { decode as atob, encode as btoa } from "base-64";
 import { Platform } from "react-native";
+import Constants from "expo-constants";
 
 if (!global.atob) global.atob = atob;
 if (!global.btoa) global.btoa = btoa;
@@ -9,50 +10,66 @@ if (!global.btoa) global.btoa = btoa;
 import { Stack, useRouter, useSegments } from "expo-router";
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabase";
-import * as Notifications from 'expo-notifications';
+
+// expo-notifications' remote/scheduled notification APIs were removed from
+// Expo Go as of SDK 53 — and just *importing* the module throws in Expo Go,
+// not only calling its functions. So we can't use a static `import` here;
+// instead we conditionally `require` it, only when not running in Expo Go,
+// so the module is never loaded at all during a live demo in Expo Go, while
+// still working exactly as before in a proper dev build.
+const isExpoGo = Constants.appOwnership === 'expo';
+
+let Notifications: any = null;
+if (!isExpoGo) {
+  Notifications = require('expo-notifications');
+}
 
 const expiryTimers = new Map<number, ReturnType<typeof setTimeout>>();
 
-Notifications.setNotificationHandler({
-  handleNotification: async (notification) => {
-    const data = notification.request.content.data;
-    const itemId = data?.itemId;
-    const type = data?.type;
+if (!isExpoGo) {
+  Notifications.setNotificationHandler({
+    handleNotification: async (notification: { request: { content: { data: any; }; }; }) => {
+      const data = notification.request.content.data;
+      const itemId = data?.itemId;
+      const type = data?.type;
 
-    // If it's a warning or expiry
-    if (itemId && (type === "warning" || type === "expired")) {
-      const { data: dbData, error } = await supabase
-        .from("photos")
-        .select("collected_at, reserved")
-        .eq("id", itemId)
-        .single();
+      // If it's a warning or expiry
+      if (itemId && (type === "warning" || type === "expired")) {
+        const { data: dbData, error } = await supabase
+          .from("photos")
+          .select("collected_at, reserved")
+          .eq("id", itemId)
+          .single();
 
-      // If already collected or no longer reserved, silence the notification
-      if (!error && dbData && (dbData.collected_at !== null || dbData.reserved === false)) {
-        console.log("Blocking notification for collected item.");
-        return {
-          shouldShowAlert: false,
-          shouldPlaySound: false,
-          shouldSetBadge: false,
-          shouldShowBanner: false,
-          shouldShowList: false,
-        };
+        // If already collected or no longer reserved, silence the notification
+        if (!error && dbData && (dbData.collected_at !== null || dbData.reserved === false)) {
+          console.log("Blocking notification for collected item.");
+          return {
+            shouldShowAlert: false,
+            shouldPlaySound: false,
+            shouldSetBadge: false,
+            shouldShowBanner: false,
+            shouldShowList: false,
+          };
+        }
       }
-    }
 
-    // Default behavior for everything else (or if item is still valid)
-    return {
-      shouldShowAlert: true,
-      shouldPlaySound: true,
-      shouldSetBadge: false,
-      shouldShowBanner: true,
-      shouldShowList: true,
-    };
-  },
-});
+      // Default behavior for everything else (or if item is still valid)
+      return {
+        shouldShowAlert: true,
+        shouldPlaySound: true,
+        shouldSetBadge: false,
+        shouldShowBanner: true,
+        shouldShowList: true,
+      };
+    },
+  });
+}
 
 // Cancel any existing scheduled notifications for an item 
 async function cancelItemNotifications(itemId: number) {
+  if (isExpoGo) return;
+
   const scheduled = await Notifications.getAllScheduledNotificationsAsync();
   for (const n of scheduled) {
     if (n.content.data?.itemId === itemId) {
@@ -63,6 +80,8 @@ async function cancelItemNotifications(itemId: number) {
 
 // Schedule the 12h warning + expiry notification for one item
 async function schedulePickupNotifications(item: { id: number; title: string; ready_for_pickup_at: string }) {
+  if (isExpoGo) return;
+
   const readyAt = new Date(item.ready_for_pickup_at);
 
   ////Actual Values
@@ -152,7 +171,9 @@ export default function RootLayout() {
   const segments = useSegments();
 
   useEffect(() => {
-    const foregroundSubscription = Notifications.addNotificationReceivedListener(async (notification) => {
+    if (isExpoGo) return;
+
+    const foregroundSubscription = Notifications.addNotificationReceivedListener(async (notification: { request: { content: { data: any; }; identifier: string; }; }) => {
       // Use optional chaining to safely get data
       const data = notification.request.content.data;
       const itemId = data?.itemId;
@@ -188,7 +209,7 @@ export default function RootLayout() {
 
   // Auth + notification channel setup 
   useEffect(() => {
-    if (Platform.OS === 'android') {
+    if (!isExpoGo && Platform.OS === 'android') {
       Notifications.setNotificationChannelAsync('pickup-reminders', {
         name: 'Pickup Reminders',
         importance: Notifications.AndroidImportance.HIGH,
@@ -252,23 +273,25 @@ export default function RootLayout() {
                 payload.old.cancelled_by_store !== true;
 
               if (isNowReady) {
-                // Immediate "ready" notification
-                await Notifications.scheduleNotificationAsync({
-                  content: {
-                    title: "Ready for Pickup! 🎁",
-                    body: `Your item "${payload.new.title}" is ready. You have 48 hours to collect!`,
-                    sound: true,
-                    data: { itemId: payload.new.id, type: "ready" },
-                  },
-                  trigger: null, // immediate
-                });
+                if (!isExpoGo) {
+                  // Immediate "ready" notification
+                  await Notifications.scheduleNotificationAsync({
+                    content: {
+                      title: "Ready for Pickup! 🎁",
+                      body: `Your item "${payload.new.title}" is ready. You have 48 hours to collect!`,
+                      sound: true,
+                      data: { itemId: payload.new.id, type: "ready" },
+                    },
+                    trigger: null, // immediate
+                  });
 
-                // Schedule the 12h warning + expiry notifications
-                await schedulePickupNotifications({
-                  id: payload.new.id,
-                  title: payload.new.title,
-                  ready_for_pickup_at: payload.new.ready_for_pickup_at,
-                });
+                  // Schedule the 12h warning + expiry notifications
+                  await schedulePickupNotifications({
+                    id: payload.new.id,
+                    title: payload.new.title,
+                    ready_for_pickup_at: payload.new.ready_for_pickup_at,
+                  });
+                }
 
                 scheduleExpiryTimeout({
                   id: payload.new.id,
@@ -282,15 +305,17 @@ export default function RootLayout() {
               }
 
               if (isCancelledByStore) {
-                await Notifications.scheduleNotificationAsync({
-                  content: {
-                    title: "Reservation Cancelled by Store",
-                    body: `Sorry, "${payload.new.title}" is no longer available and has been removed from your reservations. You have not been charged.`,
-                    sound: true,
-                    data: { itemId: payload.new.id, type: "cancelled" },
-                  },
-                  trigger: null,
-                });
+                if (!isExpoGo) {
+                  await Notifications.scheduleNotificationAsync({
+                    content: {
+                      title: "Reservation Cancelled by Store",
+                      body: `Sorry, "${payload.new.title}" is no longer available and has been removed from your reservations. You have not been charged.`,
+                      sound: true,
+                      data: { itemId: payload.new.id, type: "cancelled" },
+                    },
+                    trigger: null,
+                  });
+                }
                 router.replace("/(tabs)/profile");
               }
 
@@ -346,6 +371,8 @@ export default function RootLayout() {
 
       // Re-schedule notifications for all still-active reservations
       //    (handles cases where the user reinstalled or cleared notifications)
+      if (isExpoGo) return;
+
       const { data, error } = await supabase
         .from("photos")
         .select("id, title, ready_for_pickup_at")
@@ -380,6 +407,8 @@ export default function RootLayout() {
 
   //Handle tapping a notification go to profile
   useEffect(() => {
+    if (isExpoGo) return;
+
     const subscription = Notifications.addNotificationResponseReceivedListener(() => {
       setTimeout(() => router.replace("/(tabs)/profile"), 500);
     });

@@ -6,7 +6,14 @@ import type { User } from '@supabase/supabase-js';
 import { Ionicons } from '@expo/vector-icons';
 import ItemCard from '@/components/ItemCard';
 import { router } from 'expo-router';
-import * as Notifications from 'expo-notifications';
+import Constants from "expo-constants";
+
+// expo-notifications throws just from being imported in Expo Go (SDK 53+),
+// so it's conditionally required here instead of statically imported, and
+// only when not running in Expo Go — this file works unchanged in a real
+// dev build.
+const isExpoGo = Constants.appOwnership === 'expo';
+const Notifications: any = isExpoGo ? null : require('expo-notifications');
 
 //sets up for the profile and photos types for the store home screen
 type Profile = {
@@ -149,6 +156,8 @@ export default function StoreHomeScreen() {
 
   // Function to show the alert to the shop staff
   const triggerStoreNotification = async (item: any) => {
+    if (isExpoGo) return;
+
     const { status } = await Notifications.getPermissionsAsync();
     if (status !== 'granted') {
       await Notifications.requestPermissionsAsync();

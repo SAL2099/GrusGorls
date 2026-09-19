@@ -4,8 +4,15 @@ import { useLocalSearchParams, useRouter, useSegments } from "expo-router";
 import { supabase } from "../../lib/supabase";
 import { useEffect, useState } from "react";
 import Screen from "../../components/Screen";
-import * as Notifications from 'expo-notifications';
+import Constants from "expo-constants";
 import StyledAlert from "../../components/StyledAlert";
+
+// expo-notifications throws just from being imported in Expo Go (SDK 53+),
+// so it's conditionally required here instead of statically imported, and
+// only when not running in Expo Go — this file works unchanged in a real
+// dev build.
+const isExpoGo = Constants.appOwnership === 'expo';
+const Notifications = isExpoGo ? null : require('expo-notifications');
 
 // ItemDetails screen shows detailed information about a specific item and allows users to reserve it or stores to mark it as collected
 export default function ItemDetails() {
@@ -148,10 +155,12 @@ export default function ItemDetails() {
       return;
     }
 
-    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
-    for (const n of scheduled) {
-      if (n.content.data?.itemId === Number(parsedItem.id)) {
-        await Notifications.cancelScheduledNotificationAsync(n.identifier);
+    if (!isExpoGo) {
+      const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+      for (const n of scheduled) {
+        if (n.content.data?.itemId === Number(parsedItem.id)) {
+          await Notifications.cancelScheduledNotificationAsync(n.identifier);
+        }
       }
     }
 
