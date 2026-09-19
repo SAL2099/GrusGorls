@@ -45,7 +45,6 @@ if (!isExpoGo) {
 
         // If already collected or no longer reserved, silence the notification
         if (!error && dbData && (dbData.collected_at !== null || dbData.reserved === false)) {
-          console.log("Blocking notification for collected item.");
           return {
             shouldShowAlert: false,
             shouldPlaySound: false,

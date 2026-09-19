@@ -105,7 +105,6 @@ export default function ItemDetails() {
   // Reserve handler (user only)
   const handleReserve = async () => {
     if (!user) return;
-    console.log("Notification scheduled at:", new Date().toLocaleTimeString());
     const reservationNumber = Math.floor(100000 + Math.random() * 900000);
 
     if (!parsedItem) return;

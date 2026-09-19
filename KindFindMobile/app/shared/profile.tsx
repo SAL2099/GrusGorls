@@ -147,8 +147,6 @@ export default function ProfileScreen() {
         .eq("reserved", false)
         .order("created_at", { ascending: false });
 
-      console.log("store_id used:", data.store_id);
-      console.log("shopData:", shopData);
       setShopUploads(shopData ?? []);
     } else {
       setShopUploads([]);

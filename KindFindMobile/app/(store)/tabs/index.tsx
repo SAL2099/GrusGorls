@@ -106,11 +106,8 @@ export default function StoreHomeScreen() {
   // Listen for real-time updates to reservations for this store
   useEffect(() => {
     if (!storeProfile?.store_id) {
-      console.log("No store_id found yet, waiting...");
       return;
     }
-
-    console.log("Listening for reservations at Store:", storeProfile.store_id);
 
     const channel = supabase
       .channel('store-reservations')
@@ -146,7 +143,7 @@ export default function StoreHomeScreen() {
         }
       )
       .subscribe((status) => {
-        console.log("Subscription status:", status);
+        console.log("");
       });
 
     return () => {

@@ -33,8 +33,6 @@ export default function StoreProfileScreen() {
             setLoading(true);
             setError(null);
 
-            console.log("Loading store profile:", profileId);
-
             // Get the specific store selected from the map
             const {
                 data: profileData,

@@ -79,7 +79,6 @@ export default function HomeScreen() {
 
         setNearbyStoreIds(results.map((s) => s.id));
       } catch (e) {
-        console.log("Failed to determine nearby shops:", e);
         setNearbyStoreIds(null); // fail open — show everything if we couldn't figure out the area
       } finally {
         setLocatingShops(false);
