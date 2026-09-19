@@ -1,10 +1,10 @@
-import React, { useState, useRef, useEffect } from "react"; // Import React and necessary hooks for managing state and refs
-import { View, Text, TextInput, Pressable, StyleSheet, Alert, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator } from "react-native";
-import { router } from "expo-router"; // Import router for navigation between screens
-import Screen from "../../components/Screen"; // Import custom Screen component for consistent styling and layout
-import { supabase } from "../../lib/supabase"; // Import supabase client for authentication and database interactions
+import React, { useState, useRef, useEffect } from "react";
+import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
+import { router } from "expo-router";
+import Screen from "../../components/Screen";
+import { supabase } from "../../lib/supabase";
 import { validatePassword, getPasswordRequirements } from "../../lib/validation";
-import { Ionicons } from "@expo/vector-icons"; //Icon
+import { Ionicons } from "@expo/vector-icons";
 import StyledAlert from "../../components/StyledAlert";
 
 
@@ -209,6 +209,7 @@ export default function SignUpScreen() {
                 >
                     <View style={styles.container}>
                         <Text style={styles.title}>Create account</Text>
+                        <Text style={styles.subtitle}>Join KindFind to start browsing, reserving, and giving items a second life</Text>
 
                         <View style={styles.roleRow}>
                             <Pressable
@@ -217,6 +218,12 @@ export default function SignUpScreen() {
                                     setRole("user");
                                 }}
                             >
+                                <Ionicons
+                                    name="person-outline"
+                                    size={16}
+                                    color="#fff"
+                                    style={{ marginRight: 6 }}
+                                />
                                 <Text style={styles.roleText}>User</Text>
                             </Pressable>
 
@@ -224,131 +231,148 @@ export default function SignUpScreen() {
                                 style={[styles.rolePill, role === "store" && styles.rolePillActive]}
                                 onPress={() => setRole("store")}
                             >
+                                <Ionicons
+                                    name="storefront-outline"
+                                    size={16}
+                                    color="#fff"
+                                    style={{ marginRight: 6 }}
+                                />
                                 <Text style={styles.roleText}>Store</Text>
                             </Pressable>
                         </View>
 
-                        <TextInput
-                            placeholder="Email"
-                            placeholderTextColor="#A7A7A7"
-                            autoCapitalize="none"
-                            keyboardType="email-address"
-                            style={styles.input}
-                            value={email}
-                            onChangeText={setEmail}
-                            returnKeyType="next"
-                            onSubmitEditing={() => passwordRef.current?.focus()}
-                        />
-
-                        <View style={styles.passwordContainer}>
-                            <TextInput
-                                ref={passwordRef}
-                                placeholder="Password"
-                                placeholderTextColor="#A7A7A7"
-                                secureTextEntry={!showPassword}
-                                style={[styles.Passwordinput, { flex: 1, marginBottom: 0 }]}
-                                value={password}
-                                onChangeText={setPassword}
-                                returnKeyType="next"
-                                onSubmitEditing={() => displayNameRef.current?.focus()}
-                            />
-                            <Pressable
-                                onPress={() => setShowPassword(!showPassword)}
-                                style={styles.eyeIcon}
-                            >
-                                <Ionicons
-                                    name={showPassword ? "eye-off-outline" : "eye-outline"}
-                                    size={20}
-                                    color="#A7A7A7"
+                        <View style={styles.card}>
+                            <Text style={styles.label}>Email</Text>
+                            <View style={styles.inputWrapper}>
+                                <Ionicons name="mail-outline" size={18} color="#A7A7A7" style={styles.inputIcon} />
+                                <TextInput
+                                    placeholder="you@example.com"
+                                    placeholderTextColor="#A7A7A7"
+                                    autoCapitalize="none"
+                                    keyboardType="email-address"
+                                    style={styles.input}
+                                    value={email}
+                                    onChangeText={setEmail}
+                                    returnKeyType="next"
+                                    onSubmitEditing={() => passwordRef.current?.focus()}
                                 />
+                            </View>
+
+                            <Text style={styles.label}>Password</Text>
+                            <View style={styles.inputWrapper}>
+                                <Ionicons name="lock-closed-outline" size={18} color="#A7A7A7" style={styles.inputIcon} />
+                                <TextInput
+                                    ref={passwordRef}
+                                    placeholder="Create a password"
+                                    placeholderTextColor="#A7A7A7"
+                                    secureTextEntry={!showPassword}
+                                    style={[styles.input, { flex: 1 }]}
+                                    value={password}
+                                    onChangeText={setPassword}
+                                    returnKeyType="next"
+                                    onSubmitEditing={() => displayNameRef.current?.focus()}
+                                />
+                                <Pressable
+                                    onPress={() => setShowPassword(!showPassword)}
+                                    style={styles.eyeIcon}
+                                >
+                                    <Ionicons
+                                        name={showPassword ? "eye-off-outline" : "eye-outline"}
+                                        size={18}
+                                        color="#A7A7A7"
+                                    />
+                                </Pressable>
+                            </View>
+
+                            {/*Password checklist */}
+                            {password.length > 0 && (
+                                <View style={styles.requirementContainer}>
+                                    {getPasswordRequirements(password).map((req, index) => (
+                                        <Text
+                                            key={index}
+                                            style={[
+                                                styles.requirementText,
+                                                { color: req.fulfilled ? "#4CAF50" : "#A7A7A7" }
+                                            ]}
+                                        >
+                                            {req.fulfilled ? "✓" : "○"} {req.label}
+                                        </Text>
+                                    ))}
+                                </View>
+                            )}
+
+                            <Text style={styles.label}>Display name</Text>
+                            <View style={styles.inputWrapper}>
+                                <Ionicons name="person-circle-outline" size={18} color="#A7A7A7" style={styles.inputIcon} />
+                                <TextInput
+                                    ref={displayNameRef}
+                                    placeholder="What should we call you?"
+                                    placeholderTextColor="#A7A7A7"
+                                    style={styles.input}
+                                    value={displayName}
+                                    onChangeText={setDisplayName}
+                                    returnKeyType="done"
+                                    onSubmitEditing={signUp}
+                                />
+                            </View>
+
+                            {/* Store signup flow: access code gate, tied to one specific shop */}
+                            {role === "store" && !codeVerified && (
+                                <View style={styles.codeCard}>
+                                    <Text style={styles.codeCardTitle}>Store access code required</Text>
+                                    <Text style={styles.codeCardText}>
+                                        Store accounts need a one-time code from our website, specific to your shop. Visit our site to request one, then enter it below.
+                                    </Text>
+
+                                    <TextInput
+                                        placeholder="Enter access code"
+                                        placeholderTextColor="#A7A7A7"
+                                        autoCapitalize="characters"
+                                        style={[styles.input, styles.codeInput]}
+                                        value={storeAccessCode}
+                                        onChangeText={setStoreAccessCode}
+                                        returnKeyType="done"
+                                        onSubmitEditing={verifyAccessCode}
+                                    />
+
+                                    <Pressable
+                                        style={[styles.button, { marginTop: 0 }]}
+                                        onPress={verifyAccessCode}
+                                        disabled={verifyingCode}
+                                    >
+                                        <Text style={styles.buttonText}>
+                                            {verifyingCode ? "Checking..." : "Verify Code"}
+                                        </Text>
+                                    </Pressable>
+                                </View>
+                            )}
+
+                            {/* Once the code is verified, show which shop this account will be — read-only, it came from the code */}
+                            {role === "store" && codeVerified && verifiedStore && (
+                                <View style={[styles.codeCard, { backgroundColor: "rgba(76, 175, 80, 0.12)", borderColor: "rgba(76, 175, 80, 0.4)" }]}>
+                                    <Text style={styles.codeCardTitle}>Registering as:</Text>
+                                    <Text style={styles.verifiedStoreName}>{verifiedStore.store_name}</Text>
+                                    {verifiedStore.address ? (
+                                        <Text style={styles.codeCardText}>{verifiedStore.address}</Text>
+                                    ) : null}
+                                    {verifiedStore.opening_times ? (
+                                        <Text style={styles.codeCardText}>{verifiedStore.opening_times}</Text>
+                                    ) : null}
+
+                                    <Pressable onPress={changeCode} style={{ marginTop: 10 }}>
+                                        <Text style={styles.link}>Not your shop? Enter a different code</Text>
+                                    </Pressable>
+                                </View>
+                            )}
+
+                            <Pressable
+                                style={[styles.button, role === "store" && !codeVerified && styles.buttonDisabled]}
+                                onPress={signUp}
+                                disabled={loading || (role === "store" && !codeVerified)}
+                            >
+                                <Text style={styles.buttonText}>{loading ? "Creating..." : "Sign up"}</Text>
                             </Pressable>
                         </View>
-
-                        {/*Password checklist */}
-                        {password.length > 0 && (
-                            <View style={styles.requirementContainer}>
-                                {getPasswordRequirements(password).map((req, index) => (
-                                    <Text
-                                        key={index}
-                                        style={[
-                                            styles.requirementText,
-                                            { color: req.fulfilled ? "#4CAF50" : "#A7A7A7" }
-                                        ]}
-                                    >
-                                        {req.fulfilled ? "✓" : "○"} {req.label}
-                                    </Text>
-                                ))}
-                            </View>
-                        )}
-
-                        <TextInput
-                            ref={displayNameRef}
-                            placeholder="Display name"
-                            placeholderTextColor="#A7A7A7"
-                            style={styles.input}
-                            value={displayName}
-                            onChangeText={setDisplayName}
-                            returnKeyType="done"
-                            onSubmitEditing={signUp}
-
-                        />
-
-                        {/* Store signup flow: access code gate, tied to one specific shop */}
-                        {role === "store" && !codeVerified && (
-                            <View style={styles.codeCard}>
-                                <Text style={styles.codeCardTitle}>Store access code required</Text>
-                                <Text style={styles.codeCardText}>
-                                    Store accounts need a one-time code from our website, specific to your shop. Visit our site to request one, then enter it below.
-                                </Text>
-
-                                <TextInput
-                                    placeholder="Enter access code"
-                                    placeholderTextColor="#A7A7A7"
-                                    autoCapitalize="characters"
-                                    style={[styles.input, { marginTop: 10, marginBottom: 10 }]}
-                                    value={storeAccessCode}
-                                    onChangeText={setStoreAccessCode}
-                                    returnKeyType="done"
-                                    onSubmitEditing={verifyAccessCode}
-                                />
-
-                                <Pressable
-                                    style={[styles.button, { marginTop: 0, backgroundColor: "#CE6674" }]}
-                                    onPress={verifyAccessCode}
-                                    disabled={verifyingCode}
-                                >
-                                    <Text style={styles.buttonText}>
-                                        {verifyingCode ? "Checking..." : "Verify Code"}
-                                    </Text>
-                                </Pressable>
-                            </View>
-                        )}
-
-                        {/* Once the code is verified, show which shop this account will be — read-only, it came from the code */}
-                        {role === "store" && codeVerified && verifiedStore && (
-                            <View style={[styles.codeCard, { backgroundColor: "rgba(76, 175, 80, 0.12)", borderColor: "rgba(76, 175, 80, 0.4)" }]}>
-                                <Text style={styles.codeCardTitle}>Registering as:</Text>
-                                <Text style={styles.verifiedStoreName}>{verifiedStore.store_name}</Text>
-                                {verifiedStore.address ? (
-                                    <Text style={styles.codeCardText}>{verifiedStore.address}</Text>
-                                ) : null}
-                                {verifiedStore.opening_times ? (
-                                    <Text style={styles.codeCardText}>{verifiedStore.opening_times}</Text>
-                                ) : null}
-
-                                <Pressable onPress={changeCode} style={{ marginTop: 10 }}>
-                                    <Text style={styles.link}>Not your shop? Enter a different code</Text>
-                                </Pressable>
-                            </View>
-                        )}
-
-                        <Pressable
-                            style={[styles.button, role === "store" && !codeVerified && styles.buttonDisabled]}
-                            onPress={signUp}
-                            disabled={loading || (role === "store" && !codeVerified)}
-                        >
-                            <Text style={styles.buttonText}>{loading ? "Creating..." : "Sign up"}</Text>
-                        </Pressable>
 
                         <Pressable onPress={() => router.push("/(auth)/login")}>
                             <Text style={styles.link}>Already have an account? Log in</Text>
@@ -371,52 +395,98 @@ export default function SignUpScreen() {
 
 // Define styles for the SignUpScreen component using StyleSheet
 const styles = StyleSheet.create({
-    // Style for the scroll view content to allow it to grow and center the form
     scrollContent: {
         flexGrow: 1,
     },
 
-    // Container style for the form, with padding and centering
     container: {
         flex: 1,
-        padding: 16,
+        padding: 20,
         justifyContent: "center",
         paddingBottom: 40
     },
 
-    // Style for the title text at the top of the form
     title: {
         color: "#fff",
-        fontSize: 22,
+        fontSize: 24,
         fontWeight: "900",
-        marginBottom: 14
+        textAlign: "center",
+        marginBottom: 6,
+    },
+
+    subtitle: {
+        color: "#fff",
+        opacity: 0.7,
+        fontSize: 13,
+        textAlign: "center",
+        marginBottom: 20,
+        paddingHorizontal: 10,
+        lineHeight: 18,
     },
 
     //tags for user/store selection
     roleRow: {
         flexDirection: "row",
         gap: 10,
-        marginBottom: 12
+        marginBottom: 16
     },
 
     rolePill: {
         flex: 1,
-        paddingVertical: 10,
+        flexDirection: "row",
+        paddingVertical: 12,
         borderRadius: 999,
-        backgroundColor: "rgba(255,255,255,0.12)",
-        alignItems: "center"
+        backgroundColor: "rgba(255,255,255,0.08)",
+        alignItems: "center",
+        justifyContent: "center",
     },
 
     rolePillActive: { backgroundColor: "#CE6674" },
     roleText: { color: "#fff", fontWeight: "900" },
 
-    input: {
+    // Card wrapping the form fields, matching the app's card language elsewhere
+    card: {
         backgroundColor: "#121C0C",
+        borderRadius: 16,
+        padding: 18,
+        outlineColor: "rgba(197, 103, 103, 0.4)",
+        outlineWidth: 1,
+        marginBottom: 20,
+    },
+
+    label: {
+        color: "#fff",
+        opacity: 0.8,
+        fontSize: 12,
+        fontWeight: "800",
+        textTransform: "uppercase",
+        marginBottom: 6,
+    },
+
+    // Wrapper for input + icon(s)
+    inputWrapper: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "rgba(255,255,255,0.08)",
         borderRadius: 12,
+        marginBottom: 14,
         paddingHorizontal: 12,
+    },
+
+    inputIcon: {
+        marginRight: 8,
+    },
+
+    input: {
+        flex: 1,
         paddingVertical: 12,
         color: "#fff",
-        marginBottom: 10,
+    },
+
+    eyeIcon: {
+        paddingLeft: 10,
+        justifyContent: "center",
+        alignItems: "center",
     },
 
     // Store access code card
@@ -426,7 +496,7 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: "rgba(206, 102, 116, 0.4)",
         padding: 14,
-        marginBottom: 10,
+        marginBottom: 14,
     },
 
     codeCardTitle: {
@@ -443,6 +513,13 @@ const styles = StyleSheet.create({
         lineHeight: 18,
     },
 
+    codeInput: {
+        backgroundColor: "rgba(255,255,255,0.08)",
+        borderRadius: 12,
+        marginTop: 10,
+        marginBottom: 10,
+    },
+
     verifiedStoreName: {
         color: "#fff",
         fontWeight: "900",
@@ -452,8 +529,8 @@ const styles = StyleSheet.create({
 
     button: {
         marginTop: 6,
-        backgroundColor: "#f30678",
-        paddingVertical: 12,
+        backgroundColor: "#CE6674",
+        paddingVertical: 14,
         borderRadius: 12,
         alignItems: "center"
     },
@@ -462,44 +539,21 @@ const styles = StyleSheet.create({
         opacity: 0.5,
     },
 
-    buttonText: { color: "#fff", fontWeight: "900" },
+    buttonText: { color: "#fff", fontWeight: "900", fontSize: 15 },
     link: {
         color: "#fff",
         opacity: 0.8,
-        marginTop: 14,
         textAlign: "center"
     },
 
     //password styles
     requirementContainer: {
-        marginBottom: 15,
-        paddingHorizontal: 10,
+        marginBottom: 14,
+        paddingHorizontal: 4,
     },
     requirementText: {
         fontSize: 12,
         marginBottom: 4,
         fontFamily: 'System',
-    },
-
-    Passwordinput: {
-        paddingHorizontal: 12,
-        paddingVertical: 12,
-        color: "#fff",
-    },
-
-    passwordContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: "#121C0C",
-        borderRadius: 12,
-        marginBottom: 10,
-        height: 50,
-        overflow: 'hidden',
-    },
-    eyeIcon: {
-        paddingHorizontal: 15,
-        justifyContent: 'center',
-        alignItems: 'center',
-        height: '100%',
     },
 });

@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { View, Text, TextInput, Pressable, StyleSheet, Alert, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
+import { View, Text, TextInput, Pressable, StyleSheet, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { supabase } from "../../lib/supabase";
 import Screen from "../../components/Screen";
@@ -86,87 +86,101 @@ export default function ResetPasswordScreen() {
                     showsVerticalScrollIndicator={false}
                 >
                     <View style={styles.container}>
-                        <Text style={styles.title}>Reset Password</Text>
+                        <View style={styles.iconCircle}>
+                            <Ionicons name="key-outline" size={28} color="#fff" />
+                        </View>
+
+                        <Text style={styles.title}>Reset password</Text>
                         <Text style={styles.subtitle}>Enter the code sent to {email}</Text>
 
-                        {/* 6-Digit Token Input */}
-                        <TextInput
-                            placeholder="6-Digit Code"
-                            placeholderTextColor="#A7A7A7"
-                            style={styles.input}
-                            value={token}
-                            onChangeText={setToken}
-                            returnKeyType="next"
-                            onSubmitEditing={() => passwordRef.current?.focus()}
-                        />
-
-                        {/* Password Input */}
-                        <View style={styles.passwordContainer}>
-                            <TextInput
-                                ref={passwordRef}
-                                placeholder="New Password"
-                                placeholderTextColor="#A7A7A7"
-                                secureTextEntry={!showPassword}
-                                style={[styles.Passwordinput, { flex: 1 }]}
-                                value={password}
-                                onChangeText={setPassword}
-                                returnKeyType="next"
-                                onSubmitEditing={() => confirmPasswordRef.current?.focus()}
-                            />
-                            <Pressable
-                                onPress={() => setShowPassword(!showPassword)}
-                                style={styles.eyeIcon}
-                            >
-                                <Ionicons
-                                    name={showPassword ? "eye-off-outline" : "eye-outline"}
-                                    size={20}
-                                    color="#A7A7A7"
+                        <View style={styles.card}>
+                            <Text style={styles.label}>Verification code</Text>
+                            <View style={styles.inputWrapper}>
+                                <Ionicons name="shield-checkmark-outline" size={18} color="#A7A7A7" style={styles.inputIcon} />
+                                <TextInput
+                                    placeholder="6-digit code"
+                                    placeholderTextColor="#A7A7A7"
+                                    keyboardType="number-pad"
+                                    style={styles.input}
+                                    value={token}
+                                    onChangeText={setToken}
+                                    returnKeyType="next"
+                                    onSubmitEditing={() => passwordRef.current?.focus()}
                                 />
+                            </View>
+
+                            <Text style={styles.label}>New password</Text>
+                            <View style={styles.inputWrapper}>
+                                <Ionicons name="lock-closed-outline" size={18} color="#A7A7A7" style={styles.inputIcon} />
+                                <TextInput
+                                    ref={passwordRef}
+                                    placeholder="New password"
+                                    placeholderTextColor="#A7A7A7"
+                                    secureTextEntry={!showPassword}
+                                    style={[styles.input, { flex: 1 }]}
+                                    value={password}
+                                    onChangeText={setPassword}
+                                    returnKeyType="next"
+                                    onSubmitEditing={() => confirmPasswordRef.current?.focus()}
+                                />
+                                <Pressable
+                                    onPress={() => setShowPassword(!showPassword)}
+                                    style={styles.eyeIcon}
+                                >
+                                    <Ionicons
+                                        name={showPassword ? "eye-off-outline" : "eye-outline"}
+                                        size={18}
+                                        color="#A7A7A7"
+                                    />
+                                </Pressable>
+                            </View>
+
+                            {/* Password Checklist */}
+                            {password.length > 0 && (
+                                <View style={styles.requirementContainer}>
+                                    {getPasswordRequirements(password).map((req, index) => (
+                                        <Text
+                                            key={index}
+                                            style={[
+                                                styles.requirementText,
+                                                { color: req.fulfilled ? "#4CAF50" : "#A7A7A7" }
+                                            ]}
+                                        >
+                                            {req.fulfilled ? "✓" : "○"} {req.label}
+                                        </Text>
+                                    ))}
+                                </View>
+                            )}
+
+                            <Text style={styles.label}>Confirm new password</Text>
+                            <View style={styles.inputWrapper}>
+                                <Ionicons name="lock-closed-outline" size={18} color="#A7A7A7" style={styles.inputIcon} />
+                                <TextInput
+                                    ref={confirmPasswordRef}
+                                    placeholder="Confirm new password"
+                                    placeholderTextColor="#A7A7A7"
+                                    secureTextEntry={!showPassword}
+                                    style={styles.input}
+                                    value={confirmPassword}
+                                    onChangeText={setConfirmPassword}
+                                    returnKeyType="done"
+                                    onSubmitEditing={handleReset}
+                                />
+                            </View>
+
+                            <Pressable
+                                style={[styles.button, loading && { opacity: 0.7 }]}
+                                onPress={handleReset}
+                                disabled={loading}
+                            >
+                                <Text style={styles.buttonText}>
+                                    {loading ? "Updating..." : "Update password"}
+                                </Text>
                             </Pressable>
                         </View>
 
-                        {/* Password Checklist */}
-                        {password.length > 0 && (
-                            <View style={styles.requirementContainer}>
-                                {getPasswordRequirements(password).map((req, index) => (
-                                    <Text
-                                        key={index}
-                                        style={[
-                                            styles.requirementText,
-                                            { color: req.fulfilled ? "#4CAF50" : "#A7A7A7" }
-                                        ]}
-                                    >
-                                        {req.fulfilled ? "✓" : "○"} {req.label}
-                                    </Text>
-                                ))}
-                            </View>
-                        )}
-
-                        {/* Confirm Password Input */}
-                        <TextInput
-                            ref={confirmPasswordRef}
-                            placeholder="Confirm New Password"
-                            placeholderTextColor="#A7A7A7"
-                            secureTextEntry={!showPassword}
-                            style={styles.input}
-                            value={confirmPassword}
-                            onChangeText={setConfirmPassword}
-                            returnKeyType="done"
-                            onSubmitEditing={handleReset}
-                        />
-
-                        <Pressable
-                            style={[styles.button, loading && { opacity: 0.7 }]}
-                            onPress={handleReset}
-                            disabled={loading}
-                        >
-                            <Text style={styles.buttonText}>
-                                {loading ? "Updating..." : "Update Password"}
-                            </Text>
-                        </Pressable>
-
                         <Pressable onPress={() => router.back()}>
-                            <Text style={styles.link}>Back to Login</Text>
+                            <Text style={styles.link}>Back to login</Text>
                         </Pressable>
 
                         {/* The Styled Alert */}
@@ -190,69 +204,104 @@ const styles = StyleSheet.create({
     },
     container: {
         flex: 1,
-        padding: 16,
+        padding: 20,
         justifyContent: "center",
         paddingBottom: 40
     },
+
+    iconCircle: {
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+        backgroundColor: "#CE6674",
+        alignSelf: "center",
+        justifyContent: "center",
+        alignItems: "center",
+        marginBottom: 16,
+    },
+
     title: {
         color: "#fff",
-        fontSize: 22,
+        fontSize: 24,
         fontWeight: "900",
-        marginBottom: 8
+        textAlign: "center",
+        marginBottom: 6,
     },
     subtitle: {
-        color: "#A7A7A7",
-        fontSize: 14,
-        marginBottom: 24,
+        color: "#fff",
+        opacity: 0.7,
+        fontSize: 13,
+        textAlign: "center",
+        marginBottom: 20,
+        paddingHorizontal: 10,
+        lineHeight: 18,
     },
+
+    // Card wrapping the form fields, matching the app's card language elsewhere
+    card: {
+        backgroundColor: "#121C0C",
+        borderRadius: 16,
+        padding: 18,
+        outlineColor: "rgba(197, 103, 103, 0.4)",
+        outlineWidth: 1,
+        marginBottom: 20,
+    },
+
+    label: {
+        color: "#fff",
+        opacity: 0.8,
+        fontSize: 12,
+        fontWeight: "800",
+        textTransform: "uppercase",
+        marginBottom: 6,
+    },
+
+    // Wrapper for input + icon(s)
+    inputWrapper: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "rgba(255,255,255,0.08)",
+        borderRadius: 12,
+        marginBottom: 14,
+        paddingHorizontal: 12,
+    },
+
+    inputIcon: {
+        marginRight: 8,
+    },
+
     input: {
-        backgroundColor: "#121C0C",
-        borderRadius: 12,
-        paddingHorizontal: 12,
-        paddingVertical: 12,
-        color: "#fff",
-        marginBottom: 10,
-    },
-    passwordContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: "#121C0C",
-        borderRadius: 12,
-        marginBottom: 10,
-        height: 50,
-        overflow: 'hidden',
-    },
-    Passwordinput: {
-        paddingHorizontal: 12,
+        flex: 1,
         paddingVertical: 12,
         color: "#fff",
     },
+
     eyeIcon: {
-        paddingHorizontal: 15,
+        paddingLeft: 10,
         justifyContent: 'center',
         alignItems: 'center',
-        height: '100%',
     },
+
     requirementContainer: {
-        marginBottom: 15,
-        paddingHorizontal: 10,
+        marginBottom: 14,
+        paddingHorizontal: 4,
     },
     requirementText: {
         fontSize: 12,
         marginBottom: 4,
     },
+
     button: {
         marginTop: 6,
-        backgroundColor: "#f30678",
-        paddingVertical: 12,
+        backgroundColor: "#CE6674",
+        paddingVertical: 14,
         borderRadius: 12,
         alignItems: "center"
     },
-    buttonText: { color: "#fff", fontWeight: "900" },
+    buttonText: { color: "#fff", fontWeight: "900", fontSize: 15 },
     link: {
         color: "#fff",
         opacity: 0.8,
-        marginTop: 20,
         textAlign: "center"
     },
 });

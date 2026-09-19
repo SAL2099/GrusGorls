@@ -1,14 +1,16 @@
-import React, { useState, useRef } from "react"; // Import necessary hooks from React for managing state and refs
-import { View, Text, TextInput, Pressable, StyleSheet, Alert, Image, ScrollView, KeyboardAvoidingView, Platform, } from "react-native";
-import { router } from "expo-router"; // Import the router from expo-router for navigation between screens
-import Screen from "../../components/Screen"; // Import a custom Screen component for consistent styling and layout across screens
+import React, { useState, useRef } from "react";
+import { View, Text, TextInput, Pressable, StyleSheet, Image, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
+import { router } from "expo-router";
+import Screen from "../../components/Screen";
 import { supabase } from "../../lib/supabase";
+import { Ionicons } from "@expo/vector-icons";
 import StyledAlert from "../../components/StyledAlert";
 
 // The LoginScreen component provides a user interface for users to log in to their accounts using email and password authentication
 export default function LoginScreen() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [showPassword, setShowPassword] = useState(false);
     const [loading, setLoading] = useState(false);
 
     // Ref for keyboard navigation
@@ -108,45 +110,66 @@ export default function LoginScreen() {
                             style={styles.image}
                         />
 
-                        <Text style={styles.title}>Log in</Text>
+                        <Text style={styles.title}>Welcome back</Text>
+                        <Text style={styles.subtitle}>Log in to keep browsing and reserving finds near you</Text>
 
-                        <TextInput
-                            placeholder="Email"
-                            placeholderTextColor="#A7A7A7"
-                            autoCapitalize="none"
-                            keyboardType="email-address"
-                            style={styles.input}
-                            value={email}
-                            onChangeText={setEmail}
-                            returnKeyType="next"
-                            onSubmitEditing={() => passwordRef.current?.focus()}
-                        />
+                        <View style={styles.card}>
+                            <Text style={styles.label}>Email</Text>
+                            <View style={styles.inputWrapper}>
+                                <Ionicons name="mail-outline" size={18} color="#A7A7A7" style={styles.inputIcon} />
+                                <TextInput
+                                    placeholder="you@example.com"
+                                    placeholderTextColor="#A7A7A7"
+                                    autoCapitalize="none"
+                                    keyboardType="email-address"
+                                    style={styles.input}
+                                    value={email}
+                                    onChangeText={setEmail}
+                                    returnKeyType="next"
+                                    onSubmitEditing={() => passwordRef.current?.focus()}
+                                />
+                            </View>
 
-                        <TextInput
-                            ref={passwordRef}
-                            placeholder="Password"
-                            placeholderTextColor="#A7A7A7"
-                            secureTextEntry
-                            style={styles.input}
-                            value={password}
-                            onChangeText={setPassword}
-                            returnKeyType="done"
-                            onSubmitEditing={login}
-                        />
+                            <Text style={styles.label}>Password</Text>
+                            <View style={styles.inputWrapper}>
+                                <Ionicons name="lock-closed-outline" size={18} color="#A7A7A7" style={styles.inputIcon} />
+                                <TextInput
+                                    ref={passwordRef}
+                                    placeholder="Your password"
+                                    placeholderTextColor="#A7A7A7"
+                                    secureTextEntry={!showPassword}
+                                    style={[styles.input, { flex: 1 }]}
+                                    value={password}
+                                    onChangeText={setPassword}
+                                    returnKeyType="done"
+                                    onSubmitEditing={login}
+                                />
+                                <Pressable
+                                    onPress={() => setShowPassword(!showPassword)}
+                                    style={styles.eyeIcon}
+                                >
+                                    <Ionicons
+                                        name={showPassword ? "eye-off-outline" : "eye-outline"}
+                                        size={18}
+                                        color="#A7A7A7"
+                                    />
+                                </Pressable>
+                            </View>
 
-                        {/* Forgot Password Link */}
-                        <Pressable
-                            onPress={handleForgotPassword}
-                            style={styles.forgotPasswordContainer}
-                        >
-                            <Text style={styles.forgotPasswordText}>Forgot password?</Text>
-                        </Pressable>
+                            {/* Forgot Password Link */}
+                            <Pressable
+                                onPress={handleForgotPassword}
+                                style={styles.forgotPasswordContainer}
+                            >
+                                <Text style={styles.forgotPasswordText}>Forgot password?</Text>
+                            </Pressable>
 
-                        <Pressable style={styles.button} onPress={login} disabled={loading}>
-                            <Text style={styles.buttonText}>
-                                {loading ? "Logging in..." : "Log in"}
-                            </Text>
-                        </Pressable>
+                            <Pressable style={styles.button} onPress={login} disabled={loading}>
+                                <Text style={styles.buttonText}>
+                                    {loading ? "Logging in..." : "Log in"}
+                                </Text>
+                            </Pressable>
+                        </View>
 
                         <Pressable onPress={() => router.push("/(auth)/signup")}>
                             <Text style={styles.link}>No account? Create one</Text>
@@ -168,73 +191,113 @@ export default function LoginScreen() {
 
 // Define styles for the LoginScreen component using StyleSheet
 const styles = StyleSheet.create({
-    // Style for the scroll view content to allow it to grow and center the content
     scrollContent: {
         flexGrow: 1,
     },
 
-    // Container style for the whole screen, centers the content and adds padding
     container: {
         flex: 1,
-        padding: 16,
+        padding: 20,
         justifyContent: "center",
         paddingBottom: 20,
     },
 
     title: {
         color: "#fff",
-        fontSize: 22,
+        fontSize: 24,
         fontWeight: "900",
-        marginBottom: 14
+        textAlign: "center",
+        marginBottom: 6,
     },
 
-    // Style for the input fields, with a dark background, rounded corners, and white text
-    input: {
+    subtitle: {
+        color: "#fff",
+        opacity: 0.7,
+        fontSize: 13,
+        textAlign: "center",
+        marginBottom: 24,
+        paddingHorizontal: 20,
+        lineHeight: 18,
+    },
+
+    // Card wrapping the form fields, matching the app's card language elsewhere
+    card: {
         backgroundColor: "#121C0C",
+        borderRadius: 16,
+        padding: 18,
+        outlineColor: "rgba(197, 103, 103, 0.4)",
+        outlineWidth: 1,
+        marginBottom: 20,
+    },
+
+    label: {
+        color: "#fff",
+        opacity: 0.8,
+        fontSize: 12,
+        fontWeight: "800",
+        textTransform: "uppercase",
+        marginBottom: 6,
+    },
+
+    // Wrapper for input + icon(s)
+    inputWrapper: {
+        flexDirection: "row",
+        alignItems: "center",
+        backgroundColor: "rgba(255,255,255,0.08)",
         borderRadius: 12,
+        marginBottom: 14,
         paddingHorizontal: 12,
+    },
+
+    inputIcon: {
+        marginRight: 8,
+    },
+
+    input: {
+        flex: 1,
         paddingVertical: 12,
         color: "#fff",
-        marginBottom: 10,
     },
 
-    // Style for the login button, with a pink background and white text
+    eyeIcon: {
+        paddingLeft: 10,
+        justifyContent: "center",
+        alignItems: "center",
+    },
+
     button: {
-        marginTop: 6,
-        backgroundColor: "#f30678",
-        paddingVertical: 12,
+        marginTop: 4,
+        backgroundColor: "#CE6674",
+        paddingVertical: 14,
         borderRadius: 12,
         alignItems: "center",
     },
-    buttonText: { color: "#fff", fontWeight: "900" },
+    buttonText: { color: "#fff", fontWeight: "900", fontSize: 15 },
 
     link: {
         color: "#fff",
         opacity: 0.8,
-        marginTop: 14,
-        textAlign: "center"
+        textAlign: "center",
+        fontSize: 13,
     },
 
-    // Style for the logo image at the top of the login screen, centered with rounded corners
     image: {
-        width: 160,
-        height: 160,
+        width: 120,
+        height: 120,
         alignSelf: "center",
-        borderRadius: 10,
-        marginBottom: 30,
+        borderRadius: 24,
+        marginBottom: 20,
     },
 
     //forgot password
     forgotPasswordContainer: {
-        alignSelf: 'flex-end',
-        marginBottom: 20,
-        marginTop: -4,
+        alignSelf: "flex-end",
+        marginBottom: 16,
+        marginTop: -6,
     },
     forgotPasswordText: {
-        color: "#fff",
-        fontSize: 13,
-        opacity: 0.7,
-        fontWeight: "600",
+        color: "#CE6674",
+        fontSize: 12,
+        fontWeight: "700",
     },
 });
-
